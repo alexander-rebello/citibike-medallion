@@ -1,0 +1,15 @@
+# Production: every month present in the source selection.
+env = "prod"
+
+[paths]
+raw_root = "~/citibike/data/raw/citibike"
+manifest = "~/citibike/data/manifest/raw_manifest.jsonl"
+lake_root = "~/citibike/lake/prod"
+
+[scope]
+months = "all"
+
+[spark]
+master = "local[8]"
+driver_memory = "10g"
+shuffle_partitions = 64   # starting point; tune with Spark UI evidence

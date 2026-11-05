@@ -1,0 +1,57 @@
+# Schema registry: every raw CSV header seen in the source must be listed here.
+# An unknown fingerprint stops the pipeline (see citibike.registry.lookup).
+#
+# fingerprint = sha256(header.strip().lower())[:16]   (same function as scripts/download_raw.py)
+# Several raw spellings can map to one logical schema; Silver has one mapping per logical schema.
+
+[schemas.legacy_v1]
+description = "Original Citi Bike format (2013-06 .. 2019-12): trip duration, bike id, user type, birth year, gender"
+columns = [
+  "tripduration", "starttime", "stoptime",
+  "startstationid", "startstationname", "startstationlatitude", "startstationlongitude",
+  "endstationid", "endstationname", "endstationlatitude", "endstationlongitude",
+  "bikeid", "usertype", "birthyear", "gender",
+]
+# Observed in samples; verified per file in Silver (the parse rate per pattern is a quality metric).
+timestamp_patterns = [
+  "yyyy-MM-dd HH:mm:ss.SSSS",  # 2018-2019
+  "yyyy-MM-dd HH:mm:ss",       # 2013-2014, 2017
+  "M/d/yyyy H:mm:ss",          # 2016
+  "M/d/yyyy H:mm",             # 2015 (no seconds -> duration from tripduration)
+]
+
+[schemas.modern_v2]
+description = "Lyft-era format (2020-01 onwards in the current bucket): ride id, rideable type, member/casual, trip coordinates"
+columns = [
+  "rideid", "rideabletype", "startedat", "endedat",
+  "startstationname", "startstationid", "endstationname", "endstationid",
+  "startlat", "startlng", "endlat", "endlng", "membercasual",
+]
+timestamp_patterns = [
+  "yyyy-MM-dd HH:mm:ss.SSS",
+  "yyyy-MM-dd HH:mm:ss",
+]
+
+[[headers]]
+fingerprint = "f42ae6a7191bfe51"
+schema = "legacy_v1"
+variant = "lowercase, unquoted"
+header = "tripduration,starttime,stoptime,start station id,start station name,start station latitude,start station longitude,end station id,end station name,end station latitude,end station longitude,bikeid,usertype,birth year,gender"
+
+[[headers]]
+fingerprint = "388de383f8b42cf0"
+schema = "legacy_v1"
+variant = "lowercase, quoted"
+header = '"tripduration","starttime","stoptime","start station id","start station name","start station latitude","start station longitude","end station id","end station name","end station latitude","end station longitude","bikeid","usertype","birth year","gender"'
+
+[[headers]]
+fingerprint = "51579225cd4c70fb"
+schema = "legacy_v1"
+variant = "Title Case (2016-10 .. 2017-03)"
+header = "Trip Duration,Start Time,Stop Time,Start Station ID,Start Station Name,Start Station Latitude,Start Station Longitude,End Station ID,End Station Name,End Station Latitude,End Station Longitude,Bike ID,User Type,Birth Year,Gender"
+
+[[headers]]
+fingerprint = "aa38470066175dea"
+schema = "modern_v2"
+variant = "snake_case"
+header = "ride_id,rideable_type,started_at,ended_at,start_station_name,start_station_id,end_station_name,end_station_id,start_lat,start_lng,end_lat,end_lng,member_casual"

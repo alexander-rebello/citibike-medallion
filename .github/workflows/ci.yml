@@ -1,0 +1,25 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: self-hosted
+    env:
+      PY: /home/ubuntu/spark-env/bin/python   # the runner service does not read ~/.bashrc
+      JAVA_HOME: /usr/lib/jvm/java-8-openjdk-amd64
+      SPARK_HOME: /opt/spark
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install test dependencies
+        run: $PY -m pip install --quiet -r requirements.txt
+
+      - name: Unit tests
+        run: $PY -m pytest -v
+
+      - name: Check every source file has a registered header (prod manifest)
+        run: CITIBIKE_ENV=prod $PY scripts/select_sources.py

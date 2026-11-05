@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+spark-warehouse/
+metastore_db/
+derby.log
+# data never goes into git
+data/
+lake/
+*.csv
+*.csv.gz
+*.zip
+*.parquet
