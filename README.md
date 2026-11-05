@@ -23,6 +23,7 @@ Bronze/Silver/Gold under `~/citibike/lake/<env>`.
 source ~/spark-env/bin/activate
 python scripts/download_raw.py --years 2015 2019 2020 2024     # raw landing
 CITIBIKE_ENV=dev python scripts/select_sources.py               # file-set selection + header check
+CITIBIKE_ENV=dev python scripts/run_bronze.py                   # Bronze: raw CSV -> Parquet, reconciled
 python -m pytest
 ```
 

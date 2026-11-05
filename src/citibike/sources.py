@@ -59,6 +59,10 @@ def select(manifest_records: list[dict]) -> dict[str, dict]:
             "status": status,
             "rows": rows[chosen],
             "selected": sorted(r["output_path"] for r in sets[chosen]),
+            "selected_files": sorted(
+                ({"path": r["output_path"], "content_sha256": r["content_sha256"],
+                  "rows": data_rows(r), "header_sha256": r["header_sha256"]} for r in sets[chosen]),
+                key=lambda f: f["path"]),
             "dropped": [
                 {"files": sorted(r["output_path"] for r in sets[k]), "rows": rows[k]}
                 for k in ranked[1:]
