@@ -26,3 +26,17 @@ Run on the 2-node cluster: 7 min 40 s. 0 corrupt rows in either schema.
   (Different source definitions; compare with care.)
 - distinct start stations (by name): 375 (2013), 471 (2015), 977 (2019), 1,257 (2020), 2,211 (2024), 2,472 (2026).
 - rows per year: 5.6 M (2013), 9.9 M (2015), 20.6 M (2019), 19.6 M (2020), 44.3 M (2024).
+
+## Station classes (decided 2026-11-06)
+
+Found by listing every station id/name that looks non-standard (ids starting with letters, or names with depot, shop,
+valet, test, ...). The coordinate box cannot separate these, because Jersey City and Hoboken lie inside it.
+
+| Class | Examples (trips, years) | Silver |
+|---|---|---|
+| Service point (depot, workshop, test, mobile unit) | `SYS016` Morgan Bike Mechanics 10,846 (2020-26); `SYS038` Morgan Loading Docks 7,777; `Shop Morgan` 4,936; `SYS035` Pier 40 Dock Station 4,924; `SYS033` Pier 40 X2 3,628; `NYCBS Depot - GOW` 5,720 (2017-19); `NYCBS Depot - SSP` 3,562 (2013-17); `NYCBS Test` 373; `Mobile 01`; `Lab - NYC` | **Reject**, reason `service_station`. Rule: id starts `SYS`, or name matches depot / mechanic / loading dock / shop / lab / test / mobile / "don't use" / QC / WH station. The match list is kept in config and its per-pattern counts go in the quality table. |
+| Valet (staffed bike parking) | `Penn Station Valet` 121,554 (2015-17); `PABT Valet` 9,629 (2015-16); `E.T. Bike-In Movie Valet` 481 | **Keep, flag** `is_valet`. Real rider trips; Gold's busiest-station ranking excludes flagged stations, totals include them. |
+| Jersey City / Hoboken (`JC*`, `HB*` ids) | `Paulus Hook`, `12 St & Sinatra Dr N`, `14 St Ferry`, ... cross-river trips in the NYC files | **Keep, flag** `outside_nyc` on the station. |
+| Montreal "8D" and (0, 0) coordinates | `8D Mobile 01`, `WS Don't Use` | Rejected by the coordinate rule (and `8D`/`Don't use` also by name). |
+
+Trailing `_` on modern ids (`5303.06_`) is stripped before matching.
