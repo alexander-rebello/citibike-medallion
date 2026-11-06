@@ -186,7 +186,8 @@ def repair_dst(df: DataFrame) -> DataFrame:
     second pass then appears to end before it started (or, in legacy data, disagrees with `tripduration` by 3600 s).
       modern: end <= start and the end time is a repeated one          -> end + 1 h
       legacy: |tripduration - timestamp difference| is 3600 s (+-60)   -> end = start + tripduration
-    Trips that start in the repeated hour and end after it cannot be checked in modern data (no true duration).
+    Not detectable in modern data (no true duration): a trip whose end lands in the second pass but still reads as after
+    its start (e.g. 00:50 -> 01:10). Those keep a duration that is 1 h too short; this is a stated limitation.
     """
     st, en, dur = F.col("start_time"), F.col("end_time"), F.col("duration_s")
     diff = F.round(en.cast("double") - st.cast("double"))
