@@ -28,6 +28,7 @@ def spark_conf(cfg: dict) -> tuple[str, dict[str, str]]:
         "spark.sql.parquet.compression.codec": "zstd",
         # a timestamp that does not match its pattern becomes null (and a counted reject), never an exception
         "spark.sql.legacy.timeParserPolicy": "CORRECTED",
+        "spark.ui.showConsoleProgress": "false",  # progress bars flood logs and CI output
         "spark.eventLog.enabled": "true",
         "spark.eventLog.dir": f"file://{event_dir}",
     }
