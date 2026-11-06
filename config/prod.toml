@@ -13,3 +13,6 @@ months = "all"
 master = "local[8]"
 driver_memory = "10g"
 shuffle_partitions = 64   # starting point; tune with Spark UI evidence
+# Cluster (used when master is spark://, e.g. CITIBIKE_SPARK_MASTER=spark://192.168.26.92:7077).
+# master stays local[8] until the two-node cluster is verified; executor sizing set at cluster start.
+driver_host = "192.168.26.92"
