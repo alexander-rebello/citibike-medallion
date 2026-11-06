@@ -1,6 +1,6 @@
 # Station dimension
 
-Built by `scripts/build_station_observations.py` (collect) and `scripts/build_stations.py` (link). Code: `src/citibike/stations.py`.
+Built and kept up to date by `scripts/update_stations.py` (incremental). Code: `src/citibike/stations.py`.
 Output in `lake/prod/silver/`: `stations` (surrogate key, ids per era, names, position, validity), `station_map`
 (schema + id + name -> key, used to join trips), `station_conflicts`, `station_coord_ambiguous`.
 
@@ -24,6 +24,9 @@ Output in `lake/prod/silver/`: `stations` (surrogate key, ids per era, names, po
 4. A pair that shares an id or name but is farther than 50 m apart is never linked. These 44 pairs (52 m to 10.9 km) are
    listed in `station_conflicts`; all 44 ended up in different stations.
 5. Station key = hash of the earliest record's label, so it does not change when later months are added.
+6. A valet record (name contains "valet") is never merged with a regular station, even at the same position. Found when a
+   rebuilt table merged `Broadway & E 22 St - Valet Scan` into `Broadway & E 21 St`, which would have flagged that busy regular
+   station as valet and dropped it from the ranking.
 
 ## Result
 
@@ -51,3 +54,16 @@ Known quirk: station name `85` (a number only) is recorded for legacy id 2021 ne
 Collecting the observations scans Bronze once and took 14 min 33 s on the cluster, longer than the Bronze load itself
 (`percentile_approx` over 667 M rows plus regex on every row). Candidate improvement: pre-aggregate by rounded position
 first, then take the median of the small result.
+
+
+## Incremental update (for the monthly run)
+
+`update_stations.py` scans only Bronze months that are new or changed (ledger digest), stores one small row per station and
+month (`silver/station_observations_monthly`, 195,743 rows for the full history), merges the months (weighted median of the
+monthly median positions) and rebuilds the station table, which takes seconds. It reports records that are new, records that
+are gone and **station keys that changed**; Silver then re-processes only the months whose own stations changed (per-month
+station fingerprint), not all months.
+
+Positions are now medians over about 10 m cells instead of over every trip. That moved 5 of 4,205 records across the 50 m
+limit compared with the first build (all borderline), which is why the table was rebuilt once and Silver re-run.
+Result after adding the valet rule: 2,837 stations (967 in both eras).

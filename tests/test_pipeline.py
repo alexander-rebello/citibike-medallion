@@ -40,7 +40,7 @@ def test_build_steps_order_and_skip():
     spec = importlib.util.spec_from_file_location("run_pipeline", os.path.join(os.path.dirname(__file__), "..", "scripts", "run_pipeline.py"))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    assert [n for n, _ in mod.build_steps("py", [2026], None, False)] == ["download", "select_sources", "bronze", "silver", "gold"]
-    assert [n for n, _ in mod.build_steps("py", [2026], None, False, ("download",))] == ["select_sources", "bronze", "silver", "gold"]
+    assert [n for n, _ in mod.build_steps("py", [2026], None, False)] == ["download", "select_sources", "bronze", "stations", "silver", "gold"]
+    assert [n for n, _ in mod.build_steps("py", [2026], None, False, ("download",))] == ["select_sources", "bronze", "stations", "silver", "gold"]
     bronze = dict(mod.build_steps("py", [2026], ["2026-10"], True))["bronze"]
     assert bronze[-3:] == ["--months", "2026-10", "--force"] or ("--force" in bronze and "2026-10" in bronze)
