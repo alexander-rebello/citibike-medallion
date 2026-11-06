@@ -4,7 +4,8 @@ from citibike.sources import select
 def rec(inner, lines, source="2013-citibike-tripdata.zip", status="ok", ym=(2013, 9), fp="f42ae6a7191bfe51"):
     out = "/raw/year={}/month={:02d}/{}.gz".format(*ym, inner.rsplit("/", 1)[-1])
     return {"record": "file", "source_key": source, "inner_path": inner, "line_count": lines,
-            "status": status, "year": ym[0], "month": ym[1], "output_path": out, "header_sha256": fp}
+            "status": status, "year": ym[0], "month": ym[1], "output_path": out, "header_sha256": fp,
+            "content_sha256": "sha-" + inner}
 
 
 def test_whole_month_file_duplicating_split_files_is_dropped():
