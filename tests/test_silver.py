@@ -26,7 +26,8 @@ def run(spark, schema, base, *rows):
                                ", ".join(f"{c} {'int' if c in ('year', 'month') else 'string'}" for c in cols))
     out = silver.standardise(df, schema, RULES)
     # read the New York wall-clock time from Spark: collect() would show the instant in the VM's timezone (UTC)
-    return out.withColumn("start_local", F.date_format("start_time", "yyyy-MM-dd'T'HH:mm:ss")).collect()
+    return (out.withColumn("start_local", F.date_format("start_time", "yyyy-MM-dd'T'HH:mm:ss"))
+            .withColumn("end_minus_start", F.col("end_time").cast("long") - F.col("start_time").cast("long")).collect())
 
 
 def test_rule_runs_cover_every_month_exactly_once():
@@ -139,8 +140,31 @@ def test_jersey_city_station_is_kept_and_flagged(spark):
     assert r.reject_reason is None and r.outside_nyc
 
 
-def test_fall_back_hour_gives_non_positive_duration_not_a_crash(spark):
-    # 01:50 then 01:10 on 2024-11-03 is a real 20 min trip across the repeated hour; wall clock reads backwards
+def test_modern_trip_ending_in_the_repeated_hour_is_repaired(spark):
+    # 01:50 then 01:10 on 2024-11-03 (clocks go back at 02:00): a real 20 min trip across the repeated hour
     (r,) = run(spark, "modern_v2", MODERN, dict(startedat="2024-11-03 01:50:00.000", endedat="2024-11-03 01:10:00.000",
                                                 year=2024, month=11))
-    assert r.reject_reason == "duration_non_positive"
+    assert r.dst_repaired and r.duration_s == 1200 and r.end_minus_start == 1200
+    assert r.reject_reason is None
+
+
+def test_end_before_start_outside_the_repeated_hour_is_still_rejected(spark):
+    summer, other_day = run(
+        spark, "modern_v2", MODERN,
+        dict(startedat="2024-06-27 10:46:00.000", endedat="2024-06-27 10:43:00.000"),
+        dict(startedat="2024-11-04 01:50:00.000", endedat="2024-11-04 01:10:00.000", year=2024, month=11))
+    for r in (summer, other_day):
+        assert not r.dst_repaired and r.reject_reason == "duration_non_positive"
+
+
+def test_legacy_trip_across_the_repeated_hour_gets_its_end_time_from_tripduration(spark):
+    (r,) = run(spark, "legacy_v1", LEGACY, dict(starttime="2016-11-06 01:50:00", stoptime="2016-11-06 01:10:00",
+                                                 tripduration="1200", year=2016, month=11))
+    assert r.dst_repaired and r.duration_s == 1200 and r.end_minus_start == 1200
+    assert not r.duration_mismatch and r.reject_reason is None
+
+
+def test_legacy_mismatch_that_is_not_dst_stays_flagged_not_repaired(spark):
+    (r,) = run(spark, "legacy_v1", LEGACY, dict(starttime="2018-01-01 13:00:00.0000", stoptime="2018-01-01 13:05:00.0000",
+                                                 tripduration="900"))
+    assert r.duration_mismatch and not r.dst_repaired and r.duration_s == 900
