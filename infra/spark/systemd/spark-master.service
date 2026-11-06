@@ -1,0 +1,14 @@
+[Unit]
+Description=Spark standalone master (citibike cluster)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=ubuntu
+# Foreground process, so systemd supervises it. spark-class sources /opt/spark/conf/spark-env.sh.
+ExecStart=/opt/spark/bin/spark-class org.apache.spark.deploy.master.Master --host 192.168.26.92 --port 7077 --webui-port 8080
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
