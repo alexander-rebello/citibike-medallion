@@ -13,6 +13,8 @@ months = "all"
 master = "local[8]"
 driver_memory = "10g"
 shuffle_partitions = 64   # starting point; tune with Spark UI evidence
-# Cluster (used when master is spark://, e.g. CITIBIKE_SPARK_MASTER=spark://192.168.26.92:7077).
-# master stays local[8] until the two-node cluster is verified; executor sizing set at cluster start.
+# Cluster, used when the master is spark:// (CITIBIKE_SPARK_MASTER=spark://192.168.26.92:7077).
+# master stays local[8] by default. spark-vm (16 GB) also runs the driver, a worker (8g), NFS and the CI runner.
 driver_host = "192.168.26.92"
+cluster_driver_memory = "3g"
+executor_memory = "6g"        # one executor per worker; fits the 8g spark-vm worker and the 12g calc worker
