@@ -3,7 +3,7 @@
 `standardise(df, schema, rules)` returns every input row exactly once, with
   - the common trip columns (typed, cleaned),
   - `reject_reasons`: all rules the row breaks (empty array = accepted) and `reject_reason`, the first of them,
-  - flags that keep the row (is_incomplete, is_valet, outside_nyc, birth_year_nulled, duration_mismatch).
+  - flags that keep the row (is_incomplete, is_valet, outside_nyc, birth_year_nulled, duration_mismatch, dst_repaired).
 Rows are never dropped here, so bronze rows = accepted + rejected holds by construction; duplicates come later.
 DataFrame functions only, no UDFs. All thresholds and patterns live in config/silver_rules.toml.
 """
@@ -170,6 +170,43 @@ def apply_rules(df: DataFrame, rules: dict) -> DataFrame:
     return out
 
 
+# ---------------------------------------------------------------- daylight-saving repair
+
+_HOUR = "INTERVAL 1 HOUR"
+
+
+def _wall(c: Column) -> Column:
+    return F.date_format(c, "yyyy-MM-dd HH:mm:ss")
+
+
+def repair_dst(df: DataFrame) -> DataFrame:
+    """Fix end times made wrong by the repeated hour when daylight saving ends (local 01:00-01:59 happens twice).
+
+    Local timestamps carry no offset, so Spark reads a repeated time as its first occurrence. A trip that ends in the
+    second pass then appears to end before it started (or, in legacy data, disagrees with `tripduration` by 3600 s).
+      modern: end <= start and the end time is a repeated one          -> end + 1 h
+      legacy: |tripduration - timestamp difference| is 3600 s (+-60)   -> end = start + tripduration
+    Trips that start in the repeated hour and end after it cannot be checked in modern data (no true duration).
+    """
+    st, en, dur = F.col("start_time"), F.col("end_time"), F.col("duration_s")
+    diff = F.round(en.cast("double") - st.cast("double"))
+    first_pass_of_repeated = _wall(en + F.expr(_HOUR)) == _wall(en)  # +1 h shows the same wall-clock time
+    legacy_fix = (F.col("schema") == "legacy_v1") & (F.abs(F.abs(dur - diff) - 3600) <= 60)
+    modern_fix = (F.col("schema") == "modern_v2") & (en <= st) & first_pass_of_repeated
+    # decide once and keep the decision in columns: the steps below change the columns the conditions read
+    marked = (df
+              .withColumn("_fix_legacy", F.coalesce(legacy_fix, F.lit(False)))
+              .withColumn("_fix_modern", F.coalesce(modern_fix, F.lit(False))))
+    fl, fm = F.col("_fix_legacy"), F.col("_fix_modern")
+    return (marked
+            .withColumn("dst_repaired", fl | fm)
+            .withColumn("end_time", F.when(fl, (st.cast("double") + dur).cast("timestamp"))
+                        .when(fm, en + F.expr(_HOUR)).otherwise(en))
+            .withColumn("duration_s", F.when(fm, dur + 3600).otherwise(dur))
+            .withColumn("duration_mismatch", F.col("duration_mismatch") & ~fl)
+            .drop("_fix_legacy", "_fix_modern"))
+
+
 def standardise(df: DataFrame, schema: str, rules: dict | None = None) -> DataFrame:
     rules = rules or load_rules()
-    return apply_rules(MAPPERS[schema](df, rules), rules)
+    return apply_rules(repair_dst(MAPPERS[schema](df, rules)), rules)

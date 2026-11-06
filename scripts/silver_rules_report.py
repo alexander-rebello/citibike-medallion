@@ -19,7 +19,7 @@ from pyspark.sql import functions as F  # noqa: E402
 from citibike import bronze, config, silver  # noqa: E402
 from citibike.spark import get_spark  # noqa: E402
 
-FLAGS = ["duration_mismatch", "birth_year_nulled", "is_incomplete", "is_valet", "outside_nyc"]
+FLAGS = ["dst_repaired", "duration_mismatch", "birth_year_nulled", "is_incomplete", "is_valet", "outside_nyc"]
 
 
 def dump(path, rows):
