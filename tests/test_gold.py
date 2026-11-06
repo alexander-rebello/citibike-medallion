@@ -58,3 +58,42 @@ def test_total_mismatch_keeps_the_previous_publication(spark, trips, tmp_path):
     assert json.loads((tmp_path / "gold" / "_READY").read_text())["run_id"] == "run1"
     assert gold.total_trips(spark.read.parquet(str(tmp_path / "gold" / "gold_riders_daily"))) == 4
     assert os.path.exists(tmp_path / "gold" / "_staging" / "run2")  # kept for inspection
+
+
+# ---------------------------------------------------------------- stations and distance bands
+
+ST_COLS = "station_key long, station_name string, lat double, lng double, is_valet boolean, outside_nyc boolean"
+STATIONS = [(1, "Times Sq", 40.7580, -73.9855, False, False),     # at the reference point: 0-2 km
+            (2, "Far Brooklyn", 40.6500, -73.9500, False, False),   # about 12 km away: 10+ km
+            (3, "Penn Valet", 40.7500, -73.9900, True, False),
+            (4, "Hoboken", 40.7440, -74.0300, False, True)]
+
+
+def trips_for_stations(spark):
+    rows = [(D1, 8, "member", "classic", 600, 1.0, k) for k in [1] * 5 + [2] * 3 + [3] * 7 + [4] * 2]
+    rows += [(dt.date(2025, 1, 5), 9, "member", "classic", 600, 1.0, 2)]
+    return spark.createDataFrame(rows, "start_date date, start_hour int, rider_type string, bike_type string, duration_s long, "
+                                       "distance_m double, start_station_key long")
+
+
+def test_station_year_ranks_only_regular_nyc_stations_and_keeps_every_trip(spark):
+    out = {(r.year, r.station_key): r for r in gold.station_year(trips_for_stations(spark), spark.createDataFrame(STATIONS, ST_COLS)).collect()}
+    assert out[(2024, 1)].rank == 1 and out[(2024, 2)].rank == 2          # the valet station (7 trips) is not ranked
+    assert out[(2024, 3)].rank is None and out[(2024, 3)].band == "valet" and out[(2024, 3)].trips_started == 7
+    assert out[(2024, 4)].rank is None and out[(2024, 4)].band == "outside_nyc"
+    assert out[(2024, 1)].band == "0-2 km" and out[(2024, 2)].band == "10+ km" and out[(2025, 2)].rank == 1
+    assert sum(r.trips_started for r in out.values()) == 18               # nothing lost
+
+
+def test_station_bands_add_up_per_year(spark):
+    sy = gold.station_year(trips_for_stations(spark), spark.createDataFrame(STATIONS, ST_COLS))
+    bands = {(r.year, r.band): r for r in gold.station_bands(sy).collect()}
+    assert bands[(2024, "0-2 km")].trips == 5 and bands[(2024, "valet")].trips == 7
+    assert round(sum(r.share_of_year_pct for r in bands.values() if r.year == 2024)) == 100
+
+
+def test_publish_checks_station_tables_against_the_trip_total(spark, tmp_path):
+    trips, st = trips_for_stations(spark), spark.createDataFrame(STATIONS, ST_COLS)
+    sy = gold.station_year(trips, st)
+    gold.publish(spark, str(tmp_path), "run1", {"gold_station_year": sy, "gold_station_bands": gold.station_bands(sy)}, 18, OK)
+    assert gold.total_started(spark.read.parquet(str(tmp_path / "gold" / "gold_station_year"))) == 18
