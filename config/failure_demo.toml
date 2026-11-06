@@ -1,0 +1,16 @@
+# Failure demo: one month whose manifest record carries a header that is not in the schema registry.
+# scripts/make_failure_demo.py writes the manifest; the pipeline must stop at select_sources.
+env = "failure_demo"
+
+[paths]
+raw_root = "~/citibike/data/raw/citibike"
+manifest = "~/citibike/data/manifest_demo/raw_manifest.jsonl"
+lake_root = "~/citibike/lake/failure_demo"
+
+[scope]
+months = ["2024-06"]
+
+[spark]
+master = "local[4]"
+driver_memory = "2g"
+shuffle_partitions = 8
