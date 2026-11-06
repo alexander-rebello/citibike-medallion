@@ -50,6 +50,23 @@ def by_month_run(runs: list[dict], make) -> Column:
     return expr
 
 
+def legacy_trip_id() -> Column:
+    """No id in legacy data: hash of start, stop, bike and start station (the same trip always gets the same id)."""
+    return F.substring(F.sha2(F.concat_ws("|", F.col("starttime"), F.col("stoptime"), F.col("bikeid"),
+                                          station_id("startstationid")), 256), 1, 32)
+
+
+def trip_id_expr(schema: str) -> Column:
+    return legacy_trip_id() if schema == "legacy_v1" else _blank_to_null(F.col("rideid"))
+
+
+def bike_start_key(schema: str) -> Column:
+    """Raw (bike, start time) text: one bike cannot start two trips at the same moment. Modern data has no bike id."""
+    if schema == "legacy_v1":
+        return F.concat_ws("|", F.col("bikeid"), F.col("starttime"))
+    return F.lit(None).cast("string")
+
+
 def haversine_m(lat1: Column, lng1: Column, lat2: Column, lng2: Column) -> Column:
     a = (F.sin(F.radians(lat2 - lat1) / 2) ** 2
          + F.cos(F.radians(lat1)) * F.cos(F.radians(lat2)) * F.sin(F.radians(lng2 - lng1) / 2) ** 2)
@@ -73,8 +90,7 @@ def _legacy(df: DataFrame, rules: dict) -> DataFrame:
     sid = station_id("startstationid")
     user = F.lower(F.trim(F.col("usertype")))
     return df.select(
-        F.substring(F.sha2(F.concat_ws("|", F.col("starttime"), F.col("stoptime"), F.col("bikeid"), sid), 256), 1, 32)
-        .alias("trip_id"),
+        legacy_trip_id().alias("trip_id"), _blank_to_null(F.col("bikeid")).alias("bike_id"),
         start.alias("start_time"), end.alias("end_time"),
         F.coalesce(tripduration, ts_diff).alias("duration_s"),
         # legacy gives the true duration; compare it with the timestamps (DST, rounding to a minute)
@@ -99,7 +115,7 @@ def _modern(df: DataFrame, rules: dict) -> DataFrame:
     member = F.lower(F.trim(F.col("membercasual")))
     bike = F.lower(F.trim(F.col("rideabletype")))
     return df.select(
-        _blank_to_null(F.col("rideid")).alias("trip_id"),
+        _blank_to_null(F.col("rideid")).alias("trip_id"), F.lit(None).cast("string").alias("bike_id"),
         start.alias("start_time"), end.alias("end_time"),
         F.round(end.cast("double") - start.cast("double")).cast("long").alias("duration_s"),
         F.lit(False).alias("duration_mismatch"),
