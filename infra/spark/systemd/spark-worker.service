@@ -1,0 +1,17 @@
+[Unit]
+Description=Spark standalone worker (citibike cluster)
+After=network-online.target
+Wants=network-online.target
+# executors read and write the lake over NFS (a local path on spark-vm)
+RequiresMountsFor=/home/ubuntu/citibike
+
+[Service]
+User=ubuntu
+# Cores and memory come from this node's spark-env.sh (SPARK_WORKER_CORES / SPARK_WORKER_MEMORY).
+ExecStart=/opt/spark/bin/spark-class org.apache.spark.deploy.worker.Worker spark://192.168.26.92:7077
+# the master may not be up yet after a reboot: keep retrying
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
