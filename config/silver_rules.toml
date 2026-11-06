@@ -21,6 +21,7 @@ service_name_patterns = [
   '\bdepot\b', 'bike mechanics', 'loading docks?', '^shop\b', '^lab - ', '\btest\b', '\bmobile 0\d',
   "don'?t use", '\bqc station\b', '\bwh station\b',
 ]
+match_radius_m = 50                          # two station records are the same place only if closer than this
 valet_name_pattern = "(?i)valet"            # kept, flagged is_valet
 outside_nyc_id_pattern = "^(JC|HB)"         # Jersey City / Hoboken, kept, flagged outside_nyc
 
