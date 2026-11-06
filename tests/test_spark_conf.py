@@ -47,3 +47,12 @@ def test_unknown_master_is_refused(monkeypatch):
     monkeypatch.delenv("CITIBIKE_SPARK_MASTER", raising=False)
     with pytest.raises(ValueError, match="unsupported"):
         spark_conf(cfg(master="yarn"))
+
+
+def test_cluster_mode_uses_smaller_driver_than_local_mode(monkeypatch):
+    monkeypatch.delenv("CITIBIKE_SPARK_MASTER", raising=False)
+    settings = dict(driver_memory="10g", cluster_driver_memory="3g", driver_host="10.0.0.1")
+    _, local = spark_conf(cfg(master="local[8]", **settings))
+    _, cluster = spark_conf(cfg(master="spark://10.0.0.1:7077", **settings))
+    assert local["spark.driver.memory"] == "10g"
+    assert cluster["spark.driver.memory"] == "3g"

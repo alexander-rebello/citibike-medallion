@@ -34,6 +34,8 @@ def spark_conf(cfg: dict) -> tuple[str, dict[str, str]]:
         conf["spark.driver.bindAddress"] = "127.0.0.1"
         conf["spark.driver.host"] = "127.0.0.1"
     elif master.startswith("spark://"):
+        # the driver shares spark-vm with a worker, so it gets less memory than in local mode
+        conf["spark.driver.memory"] = sc.get("cluster_driver_memory", conf["spark.driver.memory"])
         host = sc.get("driver_host")
         if not host:
             raise ValueError(f"master {master} needs [spark] driver_host (an address the workers can reach)")
