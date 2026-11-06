@@ -125,3 +125,24 @@ def test_months_missing_from_the_bronze_ledger_are_not_processed(spark, tmp_path
     cfg = setup(spark, tmp_path, modern_v2={"2024-06": [dict(rideid="R1")]})
     res = silver_run.run(spark, cfg, months=["2024-06", "2024-07"])
     assert res["not_ready"] == ["2024-07"] and res["processed"] == ["2024-06"]
+
+
+def test_a_new_station_elsewhere_does_not_invalidate_months_that_do_not_use_it(spark, tmp_path):
+    from citibike import stations
+    cfg = setup(spark, tmp_path, modern_v2={"2024-06": [dict(rideid="R1")], "2024-07": [dict(rideid="R2", startedat="2024-07-02 09:00:00.000", endedat="2024-07-02 09:30:00.000")]})
+    lake = cfg["paths"]["lake_root"]
+
+    def monthly(rows):   # what stations.update would have stored: which stations occur in which month
+        return spark.createDataFrame(rows, "schema string, station_id string, station_name string, year int, month int")
+    base = [("modern_v2", "6000.01", "Alpha", 2024, 6), ("modern_v2", "6000.02", "Beta", 2024, 6),
+            ("modern_v2", "6000.01", "Alpha", 2024, 7), ("modern_v2", "6000.02", "Beta", 2024, 7)]
+    monthly(base).write.mode("overwrite").parquet(f"{lake}/silver/station_observations_monthly")
+    assert sorted(silver_run.run(spark, cfg)["processed"]) == ["2024-06", "2024-07"]
+
+    # July gets a brand-new station (7777.01); the map grows by one row. June uses neither it nor anything that changed.
+    monthly(base + [("modern_v2", "7777.01", "Gamma", 2024, 7)]).write.mode("overwrite").parquet(f"{lake}/silver/station_observations_monthly")
+    spark.createDataFrame([(s, i, n, k, 1, False) for s, i, n, k in SMAP + [("modern_v2", "7777.01", "Gamma", 5)]],
+                          "schema string, station_id string, station_name string, station_key long, n long, by_position boolean") \
+        .write.mode("overwrite").parquet(f"{lake}/silver/station_map")
+    again = silver_run.run(spark, cfg)
+    assert again["processed"] == ["2024-07"] and again["skipped"] == ["2024-06"]

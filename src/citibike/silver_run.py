@@ -75,6 +75,25 @@ def stations_digest(smap: DataFrame) -> str:
     return row[0][:16]
 
 
+def station_digests(spark: SparkSession, lake: str, smap: DataFrame) -> dict[str, str] | None:
+    """Per month: fingerprint of the station-map rows for the stations that occur in that month.
+
+    A month's Silver output only depends on its own stations, so a new station elsewhere must not invalidate it.
+    None if the monthly observations are not available (then the whole-table digest is used)."""
+    path = os.path.join(root(lake), "station_observations_monthly")
+    if not os.path.exists(path):
+        return None
+    occ = spark.read.parquet(path).select("schema", "station_id", "station_name", "year", "month")
+    m = smap.select(F.col("schema").alias("m_schema"), F.col("station_id").alias("m_id"), F.col("station_name").alias("m_name"), "station_key")
+    j = occ.join(F.broadcast(m), (occ["schema"] == m["m_schema"]) & occ["station_id"].eqNullSafe(m["m_id"])
+                 & occ["station_name"].eqNullSafe(m["m_name"]), "left")
+    rows = (j.groupBy("year", "month")
+            .agg(F.sha2(F.concat_ws(",", F.sort_array(F.collect_list(F.concat_ws(
+                "|", "schema", "station_id", F.coalesce("station_name", F.lit("")), F.col("station_key").cast("string"))))), 256).alias("d"))
+            .collect())
+    return {f"{r['year']}-{r['month']:02d}": r["d"][:16] for r in rows}
+
+
 def prev_month(m: str) -> str:
     y, mo = int(m[:4]), int(m[5:])
     return f"{y - 1}-12" if mo == 1 else f"{y}-{mo - 1:02d}"
@@ -84,7 +103,7 @@ def _ym(m: str) -> int:
     return int(m[:4]) * 100 + int(m[5:])
 
 
-def plan(bronze_ledger: dict, silver_ledger: dict, scope, rules_dig: str, st_dig: str, force: bool):
+def plan(bronze_ledger: dict, silver_ledger: dict, scope, rules_dig: str, st_dig, force: bool):
     """-> (batch months with their digest, skipped months, months not ready in Bronze)."""
     months = sorted(bronze_ledger) if scope == "all" else sorted(scope)
     batch, skipped, not_ready = {}, [], []
@@ -93,7 +112,7 @@ def plan(bronze_ledger: dict, silver_ledger: dict, scope, rules_dig: str, st_dig
             not_ready.append(m)
             continue
         prev = bronze_ledger.get(prev_month(m), {}).get("digest", "")
-        d = _digest(prev, bronze_ledger[m]["digest"], rules_dig, st_dig)
+        d = _digest(prev, bronze_ledger[m]["digest"], rules_dig, st_dig.get(m, "") if isinstance(st_dig, dict) else st_dig)
         if not force and silver_ledger.get(m, {}).get("digest") == d:
             skipped.append(m)
         else:
@@ -259,7 +278,7 @@ def run(spark: SparkSession, cfg: dict, months=None, force: bool = False, run_id
 
     b_ledger, s_ledger = bronze.read_ledger(lake), read_ledger(lake)
     batch, skipped, not_ready = plan(b_ledger, s_ledger, months or cfg["scope"]["months"], rules_digest(),
-                                     stations_digest(smap), force)
+                                     station_digests(spark, lake, smap) or stations_digest(smap), force)
     result = {"run_id": run_id, "processed": [], "skipped": skipped, "not_ready": not_ready, "failed": [], "checks": {}}
     if not batch:
         append_log(lake, [{"run_id": run_id, "env": cfg["env"], "status": "nothing_to_do", "skipped": len(skipped),
