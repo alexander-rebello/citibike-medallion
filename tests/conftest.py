@@ -14,6 +14,7 @@ def spark():
          .config("spark.sql.shuffle.partitions", "2")
          .config("spark.sql.sources.partitionOverwriteMode", "dynamic")
          .config("spark.sql.session.timeZone", "America/New_York")
+         .config("spark.sql.legacy.timeParserPolicy", "CORRECTED")
          .getOrCreate())
     s.sparkContext.setLogLevel("ERROR")
     yield s

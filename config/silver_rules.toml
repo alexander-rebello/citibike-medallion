@@ -1,0 +1,74 @@
+# Silver rules: every number here comes from the Bronze profile (docs/bronze_profile.md).
+
+[trip]
+min_duration_s = 60          # shorter trips are rejected (undocked bikes, test undocks)
+max_duration_s = 86400       # longer than 24 h: bike never returned
+
+[coordinates]                # a generous box around NYC; Jersey City / Hoboken lie inside it on purpose
+lat_min = 40.4
+lat_max = 41.0
+lng_min = -74.3
+lng_max = -73.6              # (0, 0) and Montreal ("8D") stations fall outside / are explicit zeros
+
+[birth_year]
+min_year = 1920
+min_age = 16                 # Citi Bike minimum age; later birth years are nulled
+
+[stations]
+# service points are rejected (decided 2026-11-06); matched on the cleaned id or the name
+service_id_pattern = "^SYS"
+service_name_patterns = [
+  '\bdepot\b', 'bike mechanics', 'loading docks?', '^shop\b', '^lab - ', '\btest\b', '\bmobile 0\d',
+  "don'?t use", '\bqc station\b', '\bwh station\b',
+]
+valet_name_pattern = "(?i)valet"            # kept, flagged is_valet
+outside_nyc_id_pattern = "^(JC|HB)"         # Jersey City / Hoboken, kept, flagged outside_nyc
+
+# Timestamp format per run of months (measured: the format changes by month, never within one).
+# has_seconds = false: the format has no seconds, so timestamp differences are only accurate to a minute.
+[[legacy_v1.runs]]
+from = "2013-06"
+to = "2014-08"
+pattern = "yyyy-MM-dd HH:mm:ss"
+has_seconds = true
+[[legacy_v1.runs]]
+from = "2014-09"
+to = "2014-12"
+pattern = "M/d/yyyy H:mm:ss"
+has_seconds = true
+[[legacy_v1.runs]]
+from = "2015-01"
+to = "2015-03"
+pattern = "M/d/yyyy H:mm"
+has_seconds = false
+[[legacy_v1.runs]]
+from = "2015-04"
+to = "2015-05"
+pattern = "M/d/yyyy H:mm:ss"
+has_seconds = true
+[[legacy_v1.runs]]
+from = "2015-06"
+to = "2015-06"
+pattern = "M/d/yyyy H:mm"
+has_seconds = false
+[[legacy_v1.runs]]
+from = "2015-07"
+to = "2016-09"
+pattern = "M/d/yyyy H:mm:ss"
+has_seconds = true
+[[legacy_v1.runs]]
+from = "2016-10"
+to = "2017-12"
+pattern = "yyyy-MM-dd HH:mm:ss"
+has_seconds = true
+[[legacy_v1.runs]]
+from = "2018-01"
+to = "2019-12"
+pattern = "yyyy-MM-dd HH:mm:ss.SSSS"
+has_seconds = true
+
+[[modern_v2.runs]]
+from = "2020-01"
+to = "2099-12"
+pattern = "yyyy-MM-dd HH:mm:ss.SSS"
+has_seconds = true

@@ -26,6 +26,8 @@ def spark_conf(cfg: dict) -> tuple[str, dict[str, str]]:
         "spark.sql.sources.partitionOverwriteMode": "dynamic",
         "spark.sql.session.timeZone": sc.get("timezone", "America/New_York"),
         "spark.sql.parquet.compression.codec": "zstd",
+        # a timestamp that does not match its pattern becomes null (and a counted reject), never an exception
+        "spark.sql.legacy.timeParserPolicy": "CORRECTED",
         "spark.eventLog.enabled": "true",
         "spark.eventLog.dir": f"file://{event_dir}",
     }
