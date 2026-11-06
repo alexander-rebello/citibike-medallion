@@ -1,0 +1,28 @@
+name: failure-demo
+
+# Expected to FAIL. Shows failure handling: a manifest record with an unregistered header must stop the pipeline at
+# select_sources; Bronze (and everything after it) is not run, and the run log records which steps were skipped.
+on:
+  workflow_dispatch:
+
+jobs:
+  demo:
+    runs-on: self-hosted
+    timeout-minutes: 15
+    env:
+      PY: /home/ubuntu/spark-env/bin/python
+      JAVA_HOME: /usr/lib/jvm/java-8-openjdk-amd64
+      SPARK_HOME: /opt/spark
+      CITIBIKE_ENV: failure_demo
+    steps:
+      - uses: actions/checkout@v4
+      - run: $PY -m pip install --quiet -r requirements.txt
+      - name: Write a manifest with an unregistered header
+        run: $PY scripts/make_failure_demo.py
+      - name: Run the pipeline (must stop at select_sources)
+        run: $PY scripts/run_pipeline.py --skip download --summary
+      - name: What happened
+        if: failure()
+        run: |
+          { echo "### Expected failure"; echo "The pipeline stopped at the first bad step; nothing after it ran and nothing was published."; } >> "$GITHUB_STEP_SUMMARY"
+          tail -3 ~/citibike/lake/failure_demo/_meta/pipeline_runs.jsonl
