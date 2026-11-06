@@ -34,7 +34,10 @@ def main():
     spark = get_spark(cfg, "gold")
     spark.sparkContext.setLogLevel("WARN")
     trips = spark.read.parquet(os.path.join(silver_run.root(lake), "trips"))
-    tables = {"gold_riders_daily": gold.riders_daily(trips), "gold_demand_hourly": gold.demand_hourly(trips)}
+    stations = spark.read.parquet(os.path.join(silver_run.root(lake), "stations"))
+    by_station = gold.station_year(trips, stations).cache()
+    tables = {"gold_riders_daily": gold.riders_daily(trips), "gold_demand_hourly": gold.demand_hourly(trips),
+              "gold_station_year": by_station, "gold_station_bands": gold.station_bands(by_station)}
     try:
         marker = gold.publish(spark, lake, bronze.new_run_id(), tables, expected, checks)
     except gold.GoldCheckFailed as e:
