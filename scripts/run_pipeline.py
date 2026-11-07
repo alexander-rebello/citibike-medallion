@@ -28,7 +28,8 @@ def build_steps(py: str, years: list[int], months: list[str] | None, force: bool
         ("download", [py, os.path.join(HERE, "download_raw.py"), "--years", *map(str, years)]),
         ("select_sources", [py, os.path.join(HERE, "select_sources.py")]),
         ("bronze", bronze),
-        # Silver and Gold steps are added here as they are finished
+        ("silver", [py, os.path.join(HERE, "run_silver.py")] + (["--months", *months] if months else []) + (["--force"] if force else [])),
+        ("gold", [py, os.path.join(HERE, "run_gold.py")]),
     ]
     return [(name, cmd) for name, cmd in steps if name not in skip]
 
