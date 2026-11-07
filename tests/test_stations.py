@@ -11,7 +11,7 @@ def legacy(spark, rows):
 
 
 def obs(spark, rows):
-    df = stations.observations(legacy(spark, rows), "legacy_v1", RULES)
+    df = stations.merge_months(stations.monthly_observations(legacy(spark, rows), "legacy_v1", RULES))
     return {(r.station_id, r.station_name): r for r in df.collect()}
 
 
@@ -20,7 +20,7 @@ def test_start_and_end_occurrences_are_combined_and_ids_cleaned(spark):
                     ("3160", "Central Park West & W 76 St", "40.7791", "-73.9739", "3160.0", "Central Park West & W 76 St", "40.7790", "-73.9738", 2019, 6)])
     r = o[("3160", "Central Park West & W 76 St")]
     assert (r.n, r.n_coords, r.first_ym, r.last_ym) == (3, 3, 201801, 201906)
-    assert abs(r.lat - 40.7790) < 0.001 and abs(r.lng - -73.9738) < 0.001  # median of the three positions
+    assert abs(r.lat - 40.7790) < 0.001 and abs(r.lng - -73.9738) < 0.001  # median position, to within a cell
     assert o[("519", "Pershing Square North")].n == 1
 
 
@@ -32,7 +32,7 @@ def test_service_points_and_empty_ids_are_left_out(spark):
 def test_bad_coordinates_do_not_move_the_station_but_still_count(spark):
     o = obs(spark, [("3480", "Odd Station", "0.0", "0.0", "3480", "Odd Station", "40.70", "-73.99", 2017, 3)])
     r = o[("3480", "Odd Station")]
-    assert (r.n, r.n_coords) == (2, 1) and abs(r.lat - 40.70) < 1e-6
+    assert (r.n, r.n_coords) == (2, 1) and abs(r.lat - 40.70) < 1e-3
 
 
 def test_same_id_with_two_names_stays_two_observations(spark):
@@ -112,3 +112,54 @@ def test_valet_and_new_jersey_flags_on_the_station(spark):
     _, out = build(spark, [L("3230", "Penn Station Valet", 40.75, -73.99), M("JC072", "Morris Canal", 40.7121, -74.0382)])
     flags = {r.station_name: (r.is_valet, r.outside_nyc) for r in out["stations"].collect()}
     assert flags == {"Penn Station Valet": (True, False), "Morris Canal": (False, True)}
+
+
+def test_months_are_merged_with_a_weighted_median_and_total_counts(spark):
+    rows = [("100", "A", "40.7000", "-74.0000", "100", "A", "40.7000", "-74.0000", 2016, 1)] * 3 \
+        + [("100", "A", "40.7500", "-74.0500", "100", "A", "40.7500", "-74.0500", 2016, 2)]
+    df = stations.monthly_observations(legacy(spark, rows), "legacy_v1", RULES)
+    monthly = {(r.year, r.month): r for r in df.collect()}
+    assert monthly[(2016, 1)].n == 6 and monthly[(2016, 2)].n == 2
+    (r,) = stations.merge_months(df).collect()
+    assert (r.n, r.first_ym, r.last_ym) == (8, 201601, 201602) and abs(r.lat - 40.70) < 1e-3  # the busier month decides
+
+
+def test_weighted_median_picks_the_value_where_half_the_weight_is_reached(spark):
+    df = spark.createDataFrame([("k", 1.0, 1), ("k", 2.0, 1), ("k", 3.0, 5), ("j", 7.0, 2)], "g string, v double, w long")
+    out = {r.g: r.m for r in stations.weighted_median(df, ["g"], "v", "w", "m").collect()}
+    assert out == {"k": 3.0, "j": 7.0}
+
+
+# ---------------------------------------------------------------- incremental update on a tiny lake
+
+def test_update_scans_only_new_months_and_keeps_existing_keys(spark, tmp_path):
+    from citibike import bronze
+    from test_silver_run import LEG_ROW, write_bronze
+
+    lake = str(tmp_path)
+    cfg = {"env": "test", "paths": {"lake_root": lake}, "scope": {"months": "all"}}
+    row = dict(LEG_ROW, startstationid="100", startstationname="S1", endstationid="200", endstationname="S2")
+    bronze.write_ledger(lake, write_bronze(spark, lake, "legacy_v1", {"2015-01": [row, row]}))
+    first = stations.update(spark, cfg, RULES)
+    assert first["scanned_months"] == ["2015-01"] and first["stations"] == 2 and first["new_records"] == 2
+
+    again = stations.update(spark, cfg, RULES)                      # nothing new: no scan, same result
+    assert again["scanned_months"] == [] and again["stations"] == 2 and again["key_changes"] == 0
+
+    new_row = dict(row, startstationid="300", startstationname="S3", startstationlatitude="40.80", startstationlongitude="-73.95")
+    ledger = bronze.read_ledger(lake)
+    ledger.update(write_bronze(spark, lake, "legacy_v1", {"2015-02": [new_row]}))
+    bronze.write_ledger(lake, ledger)
+    third = stations.update(spark, cfg, RULES)
+    assert third["scanned_months"] == ["2015-02"] and third["stations"] == 3
+    assert third["new_records"] == 1 and third["key_changes"] == 0   # the new month adds a station, the old keys stay
+    keys = {r.station_name: r.station_key for r in spark.read.parquet(f"{lake}/silver/station_map").collect()}
+    assert len(set(keys.values())) == 3
+
+
+def test_valet_point_next_to_a_regular_station_is_never_merged_with_it(spark):
+    keys, out = build(spark, [L("3439", "Broadway & E 22 St - Valet Scan", 40.7400, -73.9900),
+                              M("6098.10", "Broadway & E 21 St", 40.7400, -73.9900)])
+    assert len(set(keys.values())) == 2                      # same position, but one is a valet record
+    flags = {r.station_name: r.is_valet for r in out["stations"].collect()}
+    assert flags == {"Broadway & E 22 St - Valet Scan": True, "Broadway & E 21 St": False}   # the regular station is not flagged
