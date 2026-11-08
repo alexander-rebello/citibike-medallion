@@ -1,0 +1,1165 @@
+{
+ "provenance": {
+  "run_id": "20261106T230326Z-2b42ca",
+  "published_at": "2026-11-06T23:05:17+00:00",
+  "trips": 333588780,
+  "tables": [
+   "gold_demand_hourly",
+   "gold_riders_daily",
+   "gold_station_bands",
+   "gold_station_year"
+  ]
+ },
+ "yearly": [
+  {
+   "year": 2013,
+   "trips": 5610853,
+   "casual": 905424,
+   "member": 4705429,
+   "electric": 0,
+   "avg_min": 15.24
+  },
+  {
+   "year": 2014,
+   "trips": 8080657,
+   "casual": 793379,
+   "member": 7287278,
+   "electric": 0,
+   "avg_min": 13.88
+  },
+  {
+   "year": 2015,
+   "trips": 9933157,
+   "casual": 1308938,
+   "member": 8624219,
+   "electric": 0,
+   "avg_min": 14.99
+  },
+  {
+   "year": 2016,
+   "trips": 13838830,
+   "casual": 1506330,
+   "member": 12296655,
+   "electric": 0,
+   "avg_min": 14.65
+  },
+  {
+   "year": 2017,
+   "trips": 16356980,
+   "casual": 1766837,
+   "member": 14574247,
+   "electric": 0,
+   "avg_min": 14.36
+  },
+  {
+   "year": 2018,
+   "trips": 17537930,
+   "casual": 1929536,
+   "member": 15608394,
+   "electric": 0,
+   "avg_min": 14.13
+  },
+  {
+   "year": 2019,
+   "trips": 20544210,
+   "casual": 2868337,
+   "member": 17675873,
+   "electric": 0,
+   "avg_min": 14.32
+  },
+  {
+   "year": 2020,
+   "trips": 19544898,
+   "casual": 4495976,
+   "member": 15048922,
+   "electric": 2747655,
+   "avg_min": 18.76
+  },
+  {
+   "year": 2021,
+   "trips": 27103569,
+   "casual": 7249467,
+   "member": 19854102,
+   "electric": 8626812,
+   "avg_min": 16.41
+  },
+  {
+   "year": 2022,
+   "trips": 29796320,
+   "casual": 6561383,
+   "member": 23234937,
+   "electric": 11720468,
+   "avg_min": 15.48
+  },
+  {
+   "year": 2023,
+   "trips": 35058976,
+   "casual": 6575353,
+   "member": 28483623,
+   "electric": 17580807,
+   "avg_min": 14.06
+  },
+  {
+   "year": 2024,
+   "trips": 44255463,
+   "casual": 8541567,
+   "member": 35713896,
+   "electric": 29258378,
+   "avg_min": 13.15
+  },
+  {
+   "year": 2025,
+   "trips": 45733038,
+   "casual": 7977334,
+   "member": 37755704,
+   "electric": 32220452,
+   "avg_min": 12.54
+  },
+  {
+   "year": 2026,
+   "trips": 40193899,
+   "casual": 7242358,
+   "member": 32951541,
+   "electric": 29220224,
+   "avg_min": 12.97
+  }
+ ],
+ "by_type": [
+  {
+   "year": 2025,
+   "rider": "casual",
+   "bike": "electric",
+   "trips": 6004010,
+   "avg_min": 18.56
+  },
+  {
+   "year": 2021,
+   "rider": "casual",
+   "bike": "electric",
+   "trips": 2636243,
+   "avg_min": 22.35
+  },
+  {
+   "year": 2025,
+   "rider": "member",
+   "bike": "classic",
+   "trips": 11539262,
+   "avg_min": 11.03
+  },
+  {
+   "year": 2021,
+   "rider": "casual",
+   "bike": "classic",
+   "trips": 4613224,
+   "avg_min": 23.71
+  },
+  {
+   "year": 2021,
+   "rider": "member",
+   "bike": "classic",
+   "trips": 13863533,
+   "avg_min": 13.49
+  },
+  {
+   "year": 2022,
+   "rider": "casual",
+   "bike": "electric",
+   "trips": 2451115,
+   "avg_min": 21.14
+  },
+  {
+   "year": 2025,
+   "rider": "casual",
+   "bike": "classic",
+   "trips": 1973324,
+   "avg_min": 22.18
+  },
+  {
+   "year": 2026,
+   "rider": "member",
+   "bike": "classic",
+   "trips": 9294000,
+   "avg_min": 11.63
+  },
+  {
+   "year": 2022,
+   "rider": "casual",
+   "bike": "classic",
+   "trips": 4110268,
+   "avg_min": 24.37
+  },
+  {
+   "year": 2026,
+   "rider": "member",
+   "bike": "electric",
+   "trips": 23657541,
+   "avg_min": 11.64
+  },
+  {
+   "year": 2023,
+   "rider": "casual",
+   "bike": "classic",
+   "trips": 3136924,
+   "avg_min": 23.62
+  },
+  {
+   "year": 2022,
+   "rider": "member",
+   "bike": "classic",
+   "trips": 13965584,
+   "avg_min": 12.76
+  },
+  {
+   "year": 2023,
+   "rider": "member",
+   "bike": "electric",
+   "trips": 14142378,
+   "avg_min": 12.75
+  },
+  {
+   "year": 2024,
+   "rider": "member",
+   "bike": "electric",
+   "trips": 23116551,
+   "avg_min": 11.51
+  },
+  {
+   "year": 2024,
+   "rider": "member",
+   "bike": "classic",
+   "trips": 12597345,
+   "avg_min": 11.19
+  },
+  {
+   "year": 2021,
+   "rider": "member",
+   "bike": "electric",
+   "trips": 5990569,
+   "avg_min": 14.92
+  },
+  {
+   "year": 2023,
+   "rider": "casual",
+   "bike": "electric",
+   "trips": 3438429,
+   "avg_min": 19.92
+  },
+  {
+   "year": 2023,
+   "rider": "member",
+   "bike": "classic",
+   "trips": 14341245,
+   "avg_min": 11.84
+  },
+  {
+   "year": 2026,
+   "rider": "casual",
+   "bike": "classic",
+   "trips": 1679675,
+   "avg_min": 22.72
+  },
+  {
+   "year": 2020,
+   "rider": "casual",
+   "bike": "electric",
+   "trips": 741488,
+   "avg_min": 26.8
+  },
+  {
+   "year": 2024,
+   "rider": "casual",
+   "bike": "electric",
+   "trips": 6141827,
+   "avg_min": 19.7
+  },
+  {
+   "year": 2025,
+   "rider": "member",
+   "bike": "electric",
+   "trips": 26216442,
+   "avg_min": 11.11
+  },
+  {
+   "year": 2020,
+   "rider": "member",
+   "bike": "classic",
+   "trips": 13042755,
+   "avg_min": 15.49
+  },
+  {
+   "year": 2026,
+   "rider": "casual",
+   "bike": "electric",
+   "trips": 5562683,
+   "avg_min": 17.94
+  },
+  {
+   "year": 2022,
+   "rider": "member",
+   "bike": "electric",
+   "trips": 9269353,
+   "avg_min": 14.12
+  },
+  {
+   "year": 2020,
+   "rider": "casual",
+   "bike": "classic",
+   "trips": 3754488,
+   "avg_min": 29.09
+  },
+  {
+   "year": 2020,
+   "rider": "member",
+   "bike": "electric",
+   "trips": 2006167,
+   "avg_min": 17.68
+  },
+  {
+   "year": 2024,
+   "rider": "casual",
+   "bike": "classic",
+   "trips": 2399740,
+   "avg_min": 22.47
+  }
+ ],
+ "hourly": [
+  {
+   "year": 2024,
+   "hour": 5,
+   "trips": 311087
+  },
+  {
+   "year": 2024,
+   "hour": 21,
+   "trips": 1576930
+  },
+  {
+   "year": 2024,
+   "hour": 9,
+   "trips": 2289078
+  },
+  {
+   "year": 2024,
+   "hour": 7,
+   "trips": 1774905
+  },
+  {
+   "year": 2024,
+   "hour": 3,
+   "trips": 159862
+  },
+  {
+   "year": 2024,
+   "hour": 19,
+   "trips": 2886332
+  },
+  {
+   "year": 2024,
+   "hour": 20,
+   "trips": 2093757
+  },
+  {
+   "year": 2024,
+   "hour": 15,
+   "trips": 2999088
+  },
+  {
+   "year": 2024,
+   "hour": 6,
+   "trips": 853525
+  },
+  {
+   "year": 2024,
+   "hour": 8,
+   "trips": 2731373
+  },
+  {
+   "year": 2024,
+   "hour": 4,
+   "trips": 144329
+  },
+  {
+   "year": 2024,
+   "hour": 12,
+   "trips": 2393386
+  },
+  {
+   "year": 2024,
+   "hour": 23,
+   "trips": 961441
+  },
+  {
+   "year": 2024,
+   "hour": 18,
+   "trips": 3802015
+  },
+  {
+   "year": 2024,
+   "hour": 14,
+   "trips": 2748093
+  },
+  {
+   "year": 2024,
+   "hour": 2,
+   "trips": 239646
+  },
+  {
+   "year": 2024,
+   "hour": 11,
+   "trips": 2124128
+  },
+  {
+   "year": 2024,
+   "hour": 10,
+   "trips": 1964694
+  },
+  {
+   "year": 2024,
+   "hour": 16,
+   "trips": 3305686
+  },
+  {
+   "year": 2024,
+   "hour": 17,
+   "trips": 4076171
+  },
+  {
+   "year": 2024,
+   "hour": 0,
+   "trips": 622424
+  },
+  {
+   "year": 2024,
+   "hour": 1,
+   "trips": 374406
+  },
+  {
+   "year": 2024,
+   "hour": 13,
+   "trips": 2530979
+  },
+  {
+   "year": 2024,
+   "hour": 22,
+   "trips": 1292128
+  },
+  {
+   "year": 2019,
+   "hour": 14,
+   "trips": 1204031
+  },
+  {
+   "year": 2019,
+   "hour": 19,
+   "trips": 1314122
+  },
+  {
+   "year": 2019,
+   "hour": 13,
+   "trips": 1163533
+  },
+  {
+   "year": 2019,
+   "hour": 9,
+   "trips": 1307925
+  },
+  {
+   "year": 2019,
+   "hour": 3,
+   "trips": 41500
+  },
+  {
+   "year": 2019,
+   "hour": 10,
+   "trips": 938872
+  },
+  {
+   "year": 2019,
+   "hour": 1,
+   "trips": 105153
+  },
+  {
+   "year": 2019,
+   "hour": 16,
+   "trips": 1457858
+  },
+  {
+   "year": 2019,
+   "hour": 5,
+   "trips": 139840
+  },
+  {
+   "year": 2019,
+   "hour": 23,
+   "trips": 317968
+  },
+  {
+   "year": 2019,
+   "hour": 4,
+   "trips": 44854
+  },
+  {
+   "year": 2019,
+   "hour": 7,
+   "trips": 933211
+  },
+  {
+   "year": 2019,
+   "hour": 15,
+   "trips": 1269688
+  },
+  {
+   "year": 2019,
+   "hour": 21,
+   "trips": 631835
+  },
+  {
+   "year": 2019,
+   "hour": 11,
+   "trips": 977968
+  },
+  {
+   "year": 2019,
+   "hour": 18,
+   "trips": 1877139
+  },
+  {
+   "year": 2019,
+   "hour": 17,
+   "trips": 2001892
+  },
+  {
+   "year": 2019,
+   "hour": 0,
+   "trips": 185213
+  },
+  {
+   "year": 2019,
+   "hour": 6,
+   "trips": 442766
+  },
+  {
+   "year": 2019,
+   "hour": 8,
+   "trips": 1626563
+  },
+  {
+   "year": 2019,
+   "hour": 2,
+   "trips": 64220
+  },
+  {
+   "year": 2019,
+   "hour": 20,
+   "trips": 898962
+  },
+  {
+   "year": 2019,
+   "hour": 12,
+   "trips": 1122180
+  },
+  {
+   "year": 2019,
+   "hour": 22,
+   "trips": 476917
+  },
+  {
+   "year": 2015,
+   "hour": 11,
+   "trips": 463059
+  },
+  {
+   "year": 2015,
+   "hour": 20,
+   "trips": 429396
+  },
+  {
+   "year": 2015,
+   "hour": 6,
+   "trips": 213851
+  },
+  {
+   "year": 2015,
+   "hour": 16,
+   "trips": 705949
+  },
+  {
+   "year": 2015,
+   "hour": 2,
+   "trips": 31256
+  },
+  {
+   "year": 2015,
+   "hour": 5,
+   "trips": 53911
+  },
+  {
+   "year": 2015,
+   "hour": 23,
+   "trips": 158072
+  },
+  {
+   "year": 2015,
+   "hour": 9,
+   "trips": 640898
+  },
+  {
+   "year": 2015,
+   "hour": 21,
+   "trips": 303880
+  },
+  {
+   "year": 2015,
+   "hour": 3,
+   "trips": 19398
+  },
+  {
+   "year": 2015,
+   "hour": 19,
+   "trips": 648004
+  },
+  {
+   "year": 2015,
+   "hour": 15,
+   "trips": 608385
+  },
+  {
+   "year": 2015,
+   "hour": 18,
+   "trips": 926445
+  },
+  {
+   "year": 2015,
+   "hour": 10,
+   "trips": 441829
+  },
+  {
+   "year": 2015,
+   "hour": 4,
+   "trips": 17951
+  },
+  {
+   "year": 2015,
+   "hour": 7,
+   "trips": 446779
+  },
+  {
+   "year": 2015,
+   "hour": 14,
+   "trips": 580009
+  },
+  {
+   "year": 2015,
+   "hour": 12,
+   "trips": 536361
+  },
+  {
+   "year": 2015,
+   "hour": 8,
+   "trips": 796193
+  },
+  {
+   "year": 2015,
+   "hour": 13,
+   "trips": 561802
+  },
+  {
+   "year": 2015,
+   "hour": 22,
+   "trips": 231124
+  },
+  {
+   "year": 2015,
+   "hour": 1,
+   "trips": 53633
+  },
+  {
+   "year": 2015,
+   "hour": 0,
+   "trips": 95026
+  },
+  {
+   "year": 2015,
+   "hour": 17,
+   "trips": 969946
+  }
+ ],
+ "bands": [
+  {
+   "year": 2021,
+   "band": "0-2 km",
+   "trips": 6496816,
+   "stations": 145
+  },
+  {
+   "year": 2021,
+   "band": "2-5 km",
+   "trips": 11129299,
+   "stations": 335
+  },
+  {
+   "year": 2021,
+   "band": "5-10 km",
+   "trips": 8488244,
+   "stations": 719
+  },
+  {
+   "year": 2021,
+   "band": "10+ km",
+   "trips": 989198,
+   "stations": 342
+  },
+  {
+   "year": 2021,
+   "band": "outside_nyc",
+   "trips": 12,
+   "stations": 1
+  },
+  {
+   "year": 2024,
+   "band": "0-2 km",
+   "trips": 9694211,
+   "stations": 167
+  },
+  {
+   "year": 2024,
+   "band": "2-5 km",
+   "trips": 16438075,
+   "stations": 394
+  },
+  {
+   "year": 2024,
+   "band": "5-10 km",
+   "trips": 15052301,
+   "stations": 998
+  },
+  {
+   "year": 2024,
+   "band": "10+ km",
+   "trips": 3070708,
+   "stations": 633
+  },
+  {
+   "year": 2024,
+   "band": "outside_nyc",
+   "trips": 168,
+   "stations": 63
+  },
+  {
+   "year": 2023,
+   "band": "0-2 km",
+   "trips": 8017563,
+   "stations": 164
+  },
+  {
+   "year": 2023,
+   "band": "5-10 km",
+   "trips": 11485575,
+   "stations": 980
+  },
+  {
+   "year": 2023,
+   "band": "2-5 km",
+   "trips": 13365554,
+   "stations": 397
+  },
+  {
+   "year": 2023,
+   "band": "10+ km",
+   "trips": 2189924,
+   "stations": 619
+  },
+  {
+   "year": 2023,
+   "band": "outside_nyc",
+   "trips": 360,
+   "stations": 78
+  },
+  {
+   "year": 2016,
+   "band": "0-2 km",
+   "trips": 4739706,
+   "stations": 118
+  },
+  {
+   "year": 2016,
+   "band": "2-5 km",
+   "trips": 6358623,
+   "stations": 246
+  },
+  {
+   "year": 2016,
+   "band": "5-10 km",
+   "trips": 2659490,
+   "stations": 266
+  },
+  {
+   "year": 2016,
+   "band": "10+ km",
+   "trips": 22311,
+   "stations": 11
+  },
+  {
+   "year": 2016,
+   "band": "valet",
+   "trips": 58700,
+   "stations": 2
+  },
+  {
+   "year": 2017,
+   "band": "0-2 km",
+   "trips": 5167097,
+   "stations": 120
+  },
+  {
+   "year": 2017,
+   "band": "2-5 km",
+   "trips": 7307344,
+   "stations": 284
+  },
+  {
+   "year": 2017,
+   "band": "5-10 km",
+   "trips": 3786602,
+   "stations": 365
+  },
+  {
+   "year": 2017,
+   "band": "10+ km",
+   "trips": 90306,
+   "stations": 22
+  },
+  {
+   "year": 2017,
+   "band": "valet",
+   "trips": 5631,
+   "stations": 2
+  },
+  {
+   "year": 2025,
+   "band": "0-2 km",
+   "trips": 9977868,
+   "stations": 162
+  },
+  {
+   "year": 2025,
+   "band": "2-5 km",
+   "trips": 17015273,
+   "stations": 395
+  },
+  {
+   "year": 2025,
+   "band": "5-10 km",
+   "trips": 15656620,
+   "stations": 995
+  },
+  {
+   "year": 2025,
+   "band": "10+ km",
+   "trips": 3083277,
+   "stations": 682
+  },
+  {
+   "year": 2018,
+   "band": "0-2 km",
+   "trips": 5172643,
+   "stations": 119
+  },
+  {
+   "year": 2018,
+   "band": "2-5 km",
+   "trips": 7611250,
+   "stations": 293
+  },
+  {
+   "year": 2018,
+   "band": "5-10 km",
+   "trips": 4619742,
+   "stations": 370
+  },
+  {
+   "year": 2018,
+   "band": "10+ km",
+   "trips": 134295,
+   "stations": 22
+  },
+  {
+   "year": 2019,
+   "band": "0-2 km",
+   "trips": 5940097,
+   "stations": 127
+  },
+  {
+   "year": 2019,
+   "band": "2-5 km",
+   "trips": 8994220,
+   "stations": 302
+  },
+  {
+   "year": 2019,
+   "band": "5-10 km",
+   "trips": 5454187,
+   "stations": 470
+  },
+  {
+   "year": 2019,
+   "band": "10+ km",
+   "trips": 155706,
+   "stations": 29
+  },
+  {
+   "year": 2026,
+   "band": "0-2 km",
+   "trips": 8596590,
+   "stations": 169
+  },
+  {
+   "year": 2026,
+   "band": "2-5 km",
+   "trips": 14778893,
+   "stations": 404
+  },
+  {
+   "year": 2026,
+   "band": "5-10 km",
+   "trips": 13838944,
+   "stations": 1003
+  },
+  {
+   "year": 2026,
+   "band": "10+ km",
+   "trips": 2979472,
+   "stations": 857
+  },
+  {
+   "year": 2022,
+   "band": "0-2 km",
+   "trips": 7195101,
+   "stations": 154
+  },
+  {
+   "year": 2022,
+   "band": "5-10 km",
+   "trips": 9388398,
+   "stations": 816
+  },
+  {
+   "year": 2022,
+   "band": "2-5 km",
+   "trips": 11874157,
+   "stations": 365
+  },
+  {
+   "year": 2022,
+   "band": "10+ km",
+   "trips": 1338664,
+   "stations": 399
+  },
+  {
+   "year": 2020,
+   "band": "2-5 km",
+   "trips": 8367951,
+   "stations": 314
+  },
+  {
+   "year": 2020,
+   "band": "5-10 km",
+   "trips": 5993701,
+   "stations": 631
+  },
+  {
+   "year": 2020,
+   "band": "0-2 km",
+   "trips": 4847893,
+   "stations": 140
+  },
+  {
+   "year": 2020,
+   "band": "10+ km",
+   "trips": 335353,
+   "stations": 124
+  },
+  {
+   "year": 2015,
+   "band": "0-2 km",
+   "trips": 3767284,
+   "stations": 113
+  },
+  {
+   "year": 2015,
+   "band": "2-5 km",
+   "trips": 4440097,
+   "stations": 192
+  },
+  {
+   "year": 2015,
+   "band": "5-10 km",
+   "trips": 1704582,
+   "stations": 183
+  },
+  {
+   "year": 2015,
+   "band": "valet",
+   "trips": 21194,
+   "stations": 3
+  },
+  {
+   "year": 2013,
+   "band": "2-5 km",
+   "trips": 2411025,
+   "stations": 122
+  },
+  {
+   "year": 2013,
+   "band": "0-2 km",
+   "trips": 2148142,
+   "stations": 104
+  },
+  {
+   "year": 2013,
+   "band": "5-10 km",
+   "trips": 1051686,
+   "stations": 121
+  },
+  {
+   "year": 2014,
+   "band": "0-2 km",
+   "trips": 3143325,
+   "stations": 103
+  },
+  {
+   "year": 2014,
+   "band": "2-5 km",
+   "trips": 3559803,
+   "stations": 119
+  },
+  {
+   "year": 2014,
+   "band": "5-10 km",
+   "trips": 1377529,
+   "stations": 118
+  }
+ ],
+ "top": [
+  {
+   "year": 2015,
+   "rank": 1,
+   "name": "Park Ave & E 42 St",
+   "trips": 104776,
+   "km": 0.9,
+   "band": "0-2 km"
+  },
+  {
+   "year": 2015,
+   "rank": 2,
+   "name": "8 Ave & W 31 St",
+   "trips": 100777,
+   "km": 1.1,
+   "band": "0-2 km"
+  },
+  {
+   "year": 2015,
+   "rank": 3,
+   "name": "Lafayette St & E 8 St",
+   "trips": 95839,
+   "km": 3.1,
+   "band": "2-5 km"
+  },
+  {
+   "year": 2015,
+   "rank": 4,
+   "name": "W 21 St & 6 Ave",
+   "trips": 87129,
+   "km": 2.0,
+   "band": "0-2 km"
+  },
+  {
+   "year": 2015,
+   "rank": 5,
+   "name": "E 17 St & Broadway",
+   "trips": 86046,
+   "km": 2.4,
+   "band": "2-5 km"
+  },
+  {
+   "year": 2019,
+   "rank": 1,
+   "name": "Park Ave & E 42 St",
+   "trips": 156569,
+   "km": 0.9,
+   "band": "0-2 km"
+  },
+  {
+   "year": 2019,
+   "rank": 2,
+   "name": "E 17 St & Broadway",
+   "trips": 121760,
+   "km": 2.4,
+   "band": "2-5 km"
+  },
+  {
+   "year": 2019,
+   "rank": 3,
+   "name": "8 Ave & W 31 St",
+   "trips": 119949,
+   "km": 1.1,
+   "band": "0-2 km"
+  },
+  {
+   "year": 2019,
+   "rank": 4,
+   "name": "Broadway & E 22 St",
+   "trips": 113113,
+   "km": 2.0,
+   "band": "0-2 km"
+  },
+  {
+   "year": 2019,
+   "rank": 5,
+   "name": "Broadway & E 14 St",
+   "trips": 112990,
+   "km": 2.6,
+   "band": "2-5 km"
+  },
+  {
+   "year": 2024,
+   "rank": 1,
+   "name": "W 21 St & 6 Ave",
+   "trips": 163456,
+   "km": 2.0,
+   "band": "0-2 km"
+  },
+  {
+   "year": 2024,
+   "rank": 2,
+   "name": "8 Ave & W 31 St",
+   "trips": 140675,
+   "km": 1.1,
+   "band": "0-2 km"
+  },
+  {
+   "year": 2024,
+   "rank": 3,
+   "name": "University Pl & E 14 St",
+   "trips": 139972,
+   "km": 2.6,
+   "band": "2-5 km"
+  },
+  {
+   "year": 2024,
+   "rank": 4,
+   "name": "Broadway & W 58 St",
+   "trips": 136382,
+   "km": 1.1,
+   "band": "0-2 km"
+  },
+  {
+   "year": 2024,
+   "rank": 5,
+   "name": "West St & Chambers St",
+   "trips": 135928,
+   "km": 5.1,
+   "band": "5-10 km"
+  }
+ ]
+}
