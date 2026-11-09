@@ -43,6 +43,7 @@ section { margin-block: 2.75rem 0; }
 .legend { display: flex; flex-wrap: wrap; gap: .25rem 1.1rem; font: 400 .8125rem var(--sans); color: var(--muted); margin: .25rem 0 .1rem; }
 .legend span { display: inline-flex; align-items: center; gap: .4rem; }
 .legend i { width: .8rem; height: .8rem; display: inline-block; }
+.legend i, .tip i { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .fig { position: relative; margin-top: .5rem; }
 .panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 1.25rem 2rem; }
 .panels h3 { font: 600 .8125rem var(--sans); color: var(--muted); margin: 0 0 .1rem; letter-spacing: .02em; }
@@ -65,13 +66,14 @@ th:first-child, td:first-child { text-align: left; }
 thead th { font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--fg); font-size: .8125rem; }
 tbody tr:last-child td { border-bottom: 1px solid var(--fg); }
 td small { display: block; color: var(--faint); font-size: .75rem; }
-.stn td { text-align: left; }
+.stn th, .stn td { text-align: left; }
 .tip { position: absolute; pointer-events: none; background: var(--bg); color: var(--fg); border: 1px solid var(--rule); padding: .35rem .55rem;
   font: 400 .8125rem/1.4 var(--sans); font-variant-numeric: tabular-nums; white-space: nowrap; z-index: 5; box-shadow: 0 1px 6px rgb(0 0 0 / .12); }
 .tip b { font-weight: 600; }
 .tip i { display: inline-block; width: .6rem; height: .6rem; margin-right: .4rem; }
 .notes { max-width: 42rem; color: var(--muted); font-size: .96rem; padding-left: 1.1rem; margin: .6rem 0 0; }
 .notes li { margin-bottom: .45rem; }
+@media print { section, .fig, .panels, table, .notes { break-inside: avoid; } }
 @media (max-width: 30rem) { .paper h1 { font-size: 1.6rem; } .paper { font-size: 1rem; } }
 @media (prefers-reduced-motion: no-preference) { .tip { transition: opacity .08s; } }
 </style>
@@ -130,7 +132,7 @@ td small { display: block; color: var(--faint); font-size: .75rem; }
     <div class="legend" id="lg5"></div>
     <div class="fig" id="c5"></div>
     <p class="read" id="r5"></p>
-    <p class="src">Source: gold_demand_hourly. Each line sums to 100 % of that year’s trips (New York local time).</p>
+    <p class="src">Source: gold_demand_hourly. Each line sums to 100 % of that year’s trips (New York local time). The 2015 and 2019 lines almost coincide.</p>
   </section>
 
   <section id="f6">
@@ -156,6 +158,7 @@ td small { display: block; color: var(--faint); font-size: .75rem; }
       <li>Rider types are defined differently before and after 2019, so the casual share is not comparable across that line.</li>
       <li>Stations were added mostly outside the centre. A falling share of trips in the centre reflects the growing network as well as changing habits.</li>
       <li>Before 2020 the data has no bike type, so those trips are counted as classic bikes and the e-bike share for those years is zero by assumption.</li>
+      <li>2026 covers January to October only.</li>
       <li>Trips shorter than one minute or longer than 24 hours, depot and test stations, and duplicate records are removed (0.09 % of raw rows).</li>
     </ul>
   </section>
@@ -202,7 +205,7 @@ td small { display: block; color: var(--faint); font-size: .75rem; }
   function lineChart(host, o) {
     host.textContent = "";
     var W = host.clientWidth || 640, H = o.height || 240;
-    var m = { l: 44, r: o.endLabels ? 118 : 14, t: 12, b: 28 };
+    var m = { l: 44, r: o.endLabels ? 118 : 20, t: 12, b: 28 };
     var iw = W - m.l - m.r, ih = H - m.t - m.b;
     var x = function (v) { return m.l + (v - o.x.min) / (o.x.max - o.x.min) * iw; };
     var y = function (v) { return m.t + ih - (v - o.y.min) / (o.y.max - o.y.min) * ih; };
