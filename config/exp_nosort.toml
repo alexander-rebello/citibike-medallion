@@ -1,0 +1,25 @@
+# Performance experiment (docs/performance.md §3): Silver on 2019 + 2024 in a separate lake
+# (~/citibike/lake/exp: Bronze and the station table are symlinks to prod, read only).
+env = "exp_nosort"
+
+[paths]
+raw_root = "~/citibike/data/raw/citibike"
+manifest = "~/citibike/data/manifest/raw_manifest.jsonl"
+lake_root = "~/citibike/lake/exp"
+
+[scope]
+months = ["2019-01", "2019-02", "2019-03", "2019-04", "2019-05", "2019-06", "2019-07", "2019-08", "2019-09", "2019-10", "2019-11", "2019-12",
+          "2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06", "2024-07", "2024-08", "2024-09", "2024-10", "2024-11", "2024-12"]
+
+[spark]
+master = "local[8]"
+driver_memory = "10g"
+shuffle_partitions = 64
+driver_host = "192.168.26.92"
+cluster_driver_memory = "3g"
+executor_memory = "6g"
+
+[spark.conf]
+# no planned sort before partitioned writes; each task keeps up to 8 partition files open instead
+"spark.sql.optimizer.plannedWrite.enabled" = "false"
+"spark.sql.maxConcurrentOutputFileWriters" = "8"

@@ -56,3 +56,11 @@ def test_cluster_mode_uses_smaller_driver_than_local_mode(monkeypatch):
     _, cluster = spark_conf(cfg(master="spark://10.0.0.1:7077", **settings))
     assert local["spark.driver.memory"] == "10g"
     assert cluster["spark.driver.memory"] == "3g"
+
+
+def test_extra_settings_from_config_are_passed_as_strings(monkeypatch):
+    monkeypatch.delenv("CITIBIKE_SPARK_MASTER", raising=False)
+    _, conf = spark_conf(cfg(master="local[2]", conf={"spark.sql.maxConcurrentOutputFileWriters": 8,
+                                                      "spark.sql.optimizer.plannedWrite.enabled": "false"}))
+    assert conf["spark.sql.maxConcurrentOutputFileWriters"] == "8"
+    assert conf["spark.sql.optimizer.plannedWrite.enabled"] == "false"

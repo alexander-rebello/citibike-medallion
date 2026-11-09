@@ -32,6 +32,8 @@ def spark_conf(cfg: dict) -> tuple[str, dict[str, str]]:
         "spark.eventLog.enabled": "true",
         "spark.eventLog.dir": f"file://{event_dir}",
     }
+    # extra Spark settings from [spark.conf], e.g. the result of a tuning experiment (docs/performance.md)
+    conf.update({k: str(v) for k, v in sc.get("conf", {}).items()})
 
     if master.startswith("local"):
         conf["spark.driver.bindAddress"] = "127.0.0.1"
