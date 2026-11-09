@@ -18,3 +18,9 @@ shuffle_partitions = 64   # starting point; tune with Spark UI evidence
 driver_host = "192.168.26.92"
 cluster_driver_memory = "3g"
 executor_memory = "6g"        # one executor per worker; fits the 8g spark-vm worker and the 12g calc worker
+
+[spark.conf]
+# Partitioned writes without the planned sort by year/month: each task keeps up to 8 output files open instead.
+# Evidence (docs/performance.md §3): Silver 2019+2024 spill 14 GB -> 0, publish job -36 %, whole run -10 %.
+"spark.sql.optimizer.plannedWrite.enabled" = "false"
+"spark.sql.maxConcurrentOutputFileWriters" = "8"
