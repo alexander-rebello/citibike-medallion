@@ -20,3 +20,9 @@ months = [
 master = "local[8]"
 driver_memory = "6g"
 shuffle_partitions = 16
+
+[spark.conf]
+# Partitioned writes without the planned sort by year/month: each task keeps up to 8 output files open instead.
+# Evidence (docs/performance.md §3): Silver 2019+2024 spill 14 GB -> 0, publish job -36 %, whole run -10 %.
+"spark.sql.optimizer.plannedWrite.enabled" = "false"
+"spark.sql.maxConcurrentOutputFileWriters" = "8"
