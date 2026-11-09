@@ -59,20 +59,22 @@ Whole chain (stops at the first failing step, later steps are not run):
 ```
 CITIBIKE_ENV=dev  $PY scripts/run_pipeline.py --summary
 CITIBIKE_ENV=prod $PY scripts/run_pipeline.py --months 2026-10 --summary   # one month
-CITIBIKE_ENV=prod $PY scripts/run_pipeline.py --skip download --force      # re-process what is already downloaded
+CITIBIKE_ENV=prod $PY scripts/run_pipeline.py --skip bronze.download --force   # re-process what is already downloaded
 ```
 
-Steps, in order (each can be run on its own with the same `CITIBIKE_ENV`):
+Three layers, each made of a few steps. Every step is its own process (own Spark session, log and exit code), so a failure
+points at one step, and each step can also be run on its own with the same `CITIBIKE_ENV`. `--skip` takes a step
+(`bronze.download`) or a whole layer (`gold`).
 
-| Step | Script | Result |
-|---|---|---|
-| download | `download_raw.py [--years ...]` | `~/citibike/data/raw/...`, `manifest/raw_manifest.jsonl` |
-| select_sources | `select_sources.py` | one file set per month; refuses months with an unregistered header |
-| bronze | `run_bronze.py [--months ...] [--force]` | `bronze/trips_<schema>/year=/month=`, ledger, run log |
-| stations | `update_stations.py` | `silver/stations`, `station_map`, conflicts (incremental) |
-| silver | `run_silver.py` | `silver/{trips,rejected,duplicates,quality}`; only months that pass their checks are published |
-| gold | `run_gold.py` | four Gold tables, swapped in only if all totals match Silver, then `gold/_READY` |
-| dashboard | `build_dashboard.py` | `dashboard/index.html`, `fragment.html`, `data.json` |
+| Layer | Step | Script | Result |
+|---|---|---|---|
+| Bronze | `bronze.download` | `download_raw.py [--years ...]` | `~/citibike/data/raw/...`, `manifest/raw_manifest.jsonl` |
+| Bronze | `bronze.select` | `select_sources.py` | one file set per month; stops the run on an unregistered header |
+| Bronze | `bronze.ingest` | `run_bronze.py [--months ...] [--force]` | `bronze/trips_<schema>/year=/month=`, ledger, run log |
+| Silver | `silver.stations` | `update_stations.py` | `silver/stations`, `station_map`, conflicts (incremental) |
+| Silver | `silver.trips` | `run_silver.py` | `silver/{trips,rejected,duplicates,quality}`; only months that pass their checks are published |
+| Gold | `gold.tables` | `run_gold.py` | four Gold tables, swapped in only if all totals match Silver, then `gold/_READY` |
+| Gold | `gold.dashboard` | `build_dashboard.py` | `dashboard/index.html` (+ `fragment.html`, `data.json`), published to GitHub Pages by `prod.yml` |
 
 All steps are incremental: a month is re-processed only when its input, its rules or its stations changed (digests in
 the ledgers). `--force` overrides this.
@@ -88,7 +90,7 @@ Two nodes (spark-vm + calc), standalone master, both mount `~/citibike` over NFS
 ```
 infra/spark/cluster.sh deploy     # once: config + systemd units
 infra/spark/cluster.sh status     # start | stop | restart
-CITIBIKE_ENV=prod CITIBIKE_SPARK_MASTER=spark://192.168.26.92:7077 $PY scripts/run_pipeline.py --skip download
+CITIBIKE_ENV=prod CITIBIKE_SPARK_MASTER=spark://192.168.26.92:7077 $PY scripts/run_pipeline.py --skip bronze.download
 ```
 
 Without `CITIBIKE_SPARK_MASTER` Spark runs in local mode (`local[8]`). Event logs for performance analysis are written
@@ -106,8 +108,8 @@ node dashboard/check.js dashboard/index.html   # dashboard: prints the generated
 | Workflow | Trigger | What it does |
 |---|---|---|
 | `ci.yml` | every push and pull request | pytest + header check of the source selection; must be green before merging into `main` |
-| `prod.yml` (`prod-pipeline`) | cron `0 6 5 * *` (5th of each month, 06:00 UTC) + manual with inputs `months`, `force`, `cluster` | runs the whole pipeline in `prod`; waits for approval in the `prod` environment; one run at a time; step summary; logs uploaded as an artifact; on failure the failing step's log is shown in the summary |
-| `failure-demo.yml` | manual | writes a manifest with an unregistered header; the run must stop at `select_sources`, skip all later steps and fail with exit code 1 |
+| `prod.yml` (`prod-pipeline`) | cron `0 6 5 * *` (5th of each month, 06:00 UTC) + manual with inputs `months`, `force`, `cluster` | runs the whole pipeline in `prod`; waits for approval in the `prod` environment; one run at a time; step summary; logs uploaded as an artifact; on failure the failing step's log is shown in the summary; after a successful run the dashboard is deployed to GitHub Pages |
+| `failure-demo.yml` | manual | writes a manifest with an unregistered header; the run must stop at `bronze.select`, skip all later steps and fail with exit code 1 |
 
 Branching: feature branch → pull request → green CI → merge into `main`. `main` is never pushed to directly.
 
@@ -118,7 +120,11 @@ CITIBIKE_ENV=prod CITIBIKE_SPARK_MASTER=local[4] $PY scripts/build_dashboard.py
 ```
 
 Reads only published Gold (refuses to build without `gold/_READY`). `dashboard/index.html` is a self-contained page
-(inline SVG, no libraries, works offline, light and dark mode).
+(inline SVG, no libraries, works offline, light and dark mode). The build output is not kept in git.
+
+**Hosted at https://alexander-rebello.github.io/citibike-medallion/**: after every successful `prod-pipeline` run the
+`publish-dashboard` job deploys the freshly built page to GitHub Pages. A failed run deploys nothing, so the site keeps
+the last good dashboard. (One-time setting: Settings → Pages → Source: GitHub Actions.)
 
 ## Main results (prod run)
 

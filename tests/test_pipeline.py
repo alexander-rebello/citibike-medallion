@@ -40,7 +40,9 @@ def test_build_steps_order_and_skip():
     spec = importlib.util.spec_from_file_location("run_pipeline", os.path.join(os.path.dirname(__file__), "..", "scripts", "run_pipeline.py"))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
-    assert [n for n, _ in mod.build_steps("py", [2026], None, False)] == ["download", "select_sources", "bronze", "stations", "silver", "gold", "dashboard"]
-    assert [n for n, _ in mod.build_steps("py", [2026], None, False, ("download",))] == ["select_sources", "bronze", "stations", "silver", "gold", "dashboard"]
-    bronze = dict(mod.build_steps("py", [2026], ["2026-10"], True))["bronze"]
+    assert [n for n, _ in mod.build_steps("py", [2026], None, False)] == [
+        "bronze.download", "bronze.select", "bronze.ingest", "silver.stations", "silver.trips", "gold.tables", "gold.dashboard"]
+    assert [n for n, _ in mod.build_steps("py", [2026], None, False, ("bronze.download",))][0] == "bronze.select"
+    assert [n for n, _ in mod.build_steps("py", [2026], None, False, ("gold",))][-1] == "silver.trips"   # whole layer
+    bronze = dict(mod.build_steps("py", [2026], ["2026-10"], True))["bronze.ingest"]
     assert bronze[-3:] == ["--months", "2026-10", "--force"] or ("--force" in bronze and "2026-10" in bronze)

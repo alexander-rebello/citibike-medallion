@@ -71,3 +71,27 @@ jobs:
         with:
           name: pipeline-logs
           path: run-logs
+
+      # Only after a successful run (Gold checked and published): the dashboard becomes the GitHub Pages site.
+      - name: Collect the dashboard for GitHub Pages
+        run: |
+          mkdir -p site
+          cp dashboard/index.html dashboard/data.json site/
+          touch site/.nojekyll
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  publish-dashboard:
+    needs: run                 # skipped when the pipeline failed: the site keeps the last good dashboard
+    runs-on: ubuntu-latest     # only calls the Pages API, no access to the lake needed
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
