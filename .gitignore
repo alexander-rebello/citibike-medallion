@@ -12,3 +12,8 @@ lake/
 *.csv.gz
 *.zip
 *.parquet
+
+# dashboard build output (published to GitHub Pages by prod.yml)
+dashboard/index.html
+dashboard/fragment.html
+dashboard/data.json

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the monthly pipeline for the configured environment: download -> check sources -> Bronze (-> Silver -> Gold).
+"""Run the monthly pipeline for the configured environment: Bronze (download, select, ingest) -> Silver (stations, trips) -> Gold (tables, dashboard).
 
   CITIBIKE_ENV=prod python scripts/run_pipeline.py                  # newest data, unchanged months are skipped
   CITIBIKE_ENV=prod python scripts/run_pipeline.py --months 2026-10 --force
@@ -24,22 +24,24 @@ def build_steps(py: str, years: list[int], months: list[str] | None, force: bool
         bronze += ["--months", *months]
     if force:
         bronze.append("--force")
+    # three layers, each a few steps; a step is its own process (own Spark session, own log, own exit code)
     steps = [
-        ("download", [py, os.path.join(HERE, "download_raw.py"), "--years", *map(str, years)]),
-        ("select_sources", [py, os.path.join(HERE, "select_sources.py")]),
-        ("bronze", bronze),
-        ("stations", [py, os.path.join(HERE, "update_stations.py")]),
-        ("silver", [py, os.path.join(HERE, "run_silver.py")] + (["--months", *months] if months else []) + (["--force"] if force else [])),
-        ("gold", [py, os.path.join(HERE, "run_gold.py")]),
-        ("dashboard", [py, os.path.join(HERE, "build_dashboard.py")]),
+        ("bronze.download", [py, os.path.join(HERE, "download_raw.py"), "--years", *map(str, years)]),
+        ("bronze.select", [py, os.path.join(HERE, "select_sources.py")]),
+        ("bronze.ingest", bronze),
+        ("silver.stations", [py, os.path.join(HERE, "update_stations.py")]),
+        ("silver.trips", [py, os.path.join(HERE, "run_silver.py")] + (["--months", *months] if months else []) + (["--force"] if force else [])),
+        ("gold.tables", [py, os.path.join(HERE, "run_gold.py")]),
+        ("gold.dashboard", [py, os.path.join(HERE, "build_dashboard.py")]),
     ]
-    return [(name, cmd) for name, cmd in steps if name not in skip]
+    # skip a single step ("bronze.download") or a whole layer ("gold")
+    return [(name, cmd) for name, cmd in steps if name not in skip and name.split(".")[0] not in skip]
 
 
 def markdown(rec: dict) -> str:
-    rows = "\n".join(f"| {s['name']} | {s['status']} | {s['seconds']} s |" for s in rec["steps"])
+    rows = "\n".join(f"| {s['name'].split('.')[0]} | {s['name'].split('.')[-1]} | {s['status']} | {s['seconds']} s |" for s in rec["steps"])
     skipped = f"\nNot run: {', '.join(rec['skipped'])}" if rec.get("skipped") else ""
-    return (f"### Pipeline run {rec['run_id']} ({rec['env']}): **{rec['status']}**\n\n| step | status | time |\n|---|---|---|\n"
+    return (f"### Pipeline run {rec['run_id']} ({rec['env']}): **{rec['status']}**\n\n| layer | step | status | time |\n|---|---|---|---|\n"
             f"{rows}\n{skipped}\n")
 
 
@@ -49,7 +51,7 @@ def main():
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--years", type=int, nargs="+", help="years to download (default: this year, plus last year in January)")
     ap.add_argument("--trigger", default=os.environ.get("GITHUB_EVENT_NAME", "manual"))
-    ap.add_argument("--skip", nargs="+", default=[], help="step names to leave out, e.g. download")
+    ap.add_argument("--skip", nargs="+", default=[], help="steps or whole layers to leave out, e.g. bronze.download or gold")
     ap.add_argument("--summary", action="store_true")
     args = ap.parse_args()
 

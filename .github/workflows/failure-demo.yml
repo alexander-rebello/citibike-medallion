@@ -1,7 +1,7 @@
 name: failure-demo
 
 # Expected to FAIL. Shows failure handling: a manifest record with an unregistered header must stop the pipeline at
-# select_sources; Bronze (and everything after it) is not run, and the run log records which steps were skipped.
+# bronze.select; bronze.ingest (and everything after it) is not run, and the run log records which steps were skipped.
 on:
   workflow_dispatch:
 
@@ -19,8 +19,8 @@ jobs:
       - run: $PY -m pip install --quiet -r requirements.txt
       - name: Write a manifest with an unregistered header
         run: $PY scripts/make_failure_demo.py
-      - name: Run the pipeline (must stop at select_sources)
-        run: $PY scripts/run_pipeline.py --skip download --summary
+      - name: Run the pipeline (must stop at bronze.select)
+        run: $PY scripts/run_pipeline.py --skip bronze.download --summary
       - name: What happened
         if: failure()
         run: |
