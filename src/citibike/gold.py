@@ -98,6 +98,8 @@ def publish(spark, lake_root: str, run_id: str, tables: dict[str, DataFrame], ex
     rows = {}
     for name, df in tables.items():
         parts = [c for c in ("year", "month") if c in df.columns]
+        if parts:   # one file per partition instead of one per (shuffle task, partition): docs/performance.md §5
+            df = df.repartition(*parts)
         df.write.mode("overwrite").partitionBy(*parts).parquet(os.path.join(staging, name))
         staged = spark.read.parquet(os.path.join(staging, name))
         rows[name] = total_started(staged) if "trips_started" in staged.columns else total_trips(staged)
