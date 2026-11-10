@@ -44,7 +44,7 @@ def results(d: dict) -> None:
     e_yrs = [y for y, v in zip(yrs, ebike) if v is not None]
     a.plot(e_yrs, [v for v in ebike if v is not None], color=SERIES[1], marker="o", ms=3, label="e-bike trips")
     a.axvline(2019.5, color=INK2, lw=0.8, ls=":")
-    a.text(2019.6, 4, "legacy | modern\nschema", ha="left", va="bottom", fontsize=6, color=INK2)
+    a.text(2019.6, 4, "legacy | modern", ha="left", va="bottom", fontsize=6, color=INK2)
     a.set_xticks(range(2013, 2027, 2))
     a.set_ylim(0, 80)
     a.set_ylabel("share of trips (%)")
@@ -80,12 +80,13 @@ def results(d: dict) -> None:
     c.set_ylabel("mean trip (min)")
     c.set_ylim(0, 33)
     c.grid(axis="x", visible=False)
-    c.set_title("(c) Mean trip length, 2020 vs 2024", loc="left")
+    c.set_title("(c) Mean trip length in 2020 and 2024", loc="left")
     c.legend(loc="upper right", fontsize=7)
 
     # (d) distance bands, stacked to 100 %
     dd = ax[1, 1]
     bands = ["0-2 km", "2-5 km", "5-10 km", "10+ km"]
+    LABELS = {"0-2 km": "under 2 km", "2-5 km": "2 to 5 km", "5-10 km": "5 to 10 km", "10+ km": "over 10 km"}
     for k, y in enumerate(FOCUS):
         rows = {r["band"]: r["trips"] for r in d["bands"] if r["year"] == y}
         tot = sum(rows.values())
@@ -93,7 +94,7 @@ def results(d: dict) -> None:
         for i, bnd in enumerate(bands):
             v = 100 * rows.get(bnd, 0) / tot
             dd.barh(k, v, left=left, color=SEQ[i], height=0.6, edgecolor="white", linewidth=1,
-                    label=bnd if k == 0 else None)
+                    label=LABELS[bnd] if k == 0 else None)
             if v >= 6:
                 dd.text(left + v / 2, k, f"{v:.0f}", ha="center", va="center", fontsize=6.5,
                         color="white" if i < 2 else INK)
