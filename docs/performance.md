@@ -76,6 +76,9 @@ Event logs: build `app-20261109165606-0025`, `-0027` (base), `-0029`, `-0031` (r
 The extra shuffle costs less than writing and later listing hundreds of tiny files. At full scale (10,304 files) the effect on readers
 should be larger; it will show in the next prod Gold run.
 
+**Confirmed at full scale** (prod-pipeline run 42721947270, 9 Nov 2026): `gold_demand_hourly` now has **161 files / 356 MB**
+(was 10,304 files / 598 MB), and the `gold.tables` step took 80.5 s (was 111 s). n=1 each.
+
 ## 5. Jobs not analysed yet
 
 | Job | Time |
