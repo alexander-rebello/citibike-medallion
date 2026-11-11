@@ -65,6 +65,6 @@ benchmark; NFS single point of failure; what we would do with more time.
 |---|---|
 | format runs, id styles, birth-year marker, station classes | docs/bronze_profile.md, lake/prod/_meta/profile/ |
 | rule impact, 99.91 %, DST repair | docs/silver_rules_impact.md, lake/prod/_meta/silver_rules/ |
-| 1.75x speed-up | event logs local-1793959854349 (baseline), app-20261106103028-0000 (cluster); ~/bronze_prod_*.log |
+| 1.75x speed-up | event logs local-1793959854349 (baseline), app-20261106103028-0000 (cluster); ~/citibike/run-logs/bronze_prod_*.log |
 | Bronze reconciliation | lake/prod/_meta/bronze_runs.jsonl, bronze_ledger.json |
 | CI and review history | PRs #1-#6 |
