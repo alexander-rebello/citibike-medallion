@@ -97,3 +97,19 @@ def test_publish_checks_station_tables_against_the_trip_total(spark, tmp_path):
     sy = gold.station_year(trips, st)
     gold.publish(spark, str(tmp_path), "run1", {"gold_station_year": sy, "gold_station_bands": gold.station_bands(sy)}, 18, OK)
     assert gold.total_started(spark.read.parquet(str(tmp_path / "gold" / "gold_station_year"))) == 18
+
+
+def test_crash_during_the_swap_leaves_no_ready_marker(spark, trips, tmp_path, monkeypatch):
+    gold.publish(spark, str(tmp_path), "run1", tables(trips), 4, OK)
+    real_rename, calls = os.rename, []
+
+    def failing_rename(src, dst):
+        calls.append(src)
+        if len(calls) == 3:                      # first table swapped (2 renames), crash while swapping the second
+            raise OSError("simulated crash")
+        real_rename(src, dst)
+
+    monkeypatch.setattr(gold.os, "rename", failing_rename)
+    with pytest.raises(OSError):
+        gold.publish(spark, str(tmp_path), "run2", tables(trips), 4, OK)
+    assert not (tmp_path / "gold" / "_READY").exists()   # a half-swapped Gold must not look published

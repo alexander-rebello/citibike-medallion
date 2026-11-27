@@ -58,3 +58,26 @@ def test_months_are_independent():
         rec("2013-citibike-tripdata/8_August/201308-citibike-tripdata_1.csv", 1_000_001, ym=(2013, 8)),
     ])
     assert set(sel) == {"2013-07", "2013-08"}
+
+
+def _download_raw():
+    import importlib.util
+    import pathlib
+    path = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "download_raw.py"
+    spec = importlib.util.spec_from_file_location("download_raw", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_line_count_includes_a_last_line_without_final_newline(tmp_path):
+    import zipfile
+    dl = _download_raw()
+    zpath = tmp_path / "a.zip"
+    with zipfile.ZipFile(zpath, "w") as zf:
+        zf.writestr("with.csv", "h1,h2\n1,2\n3,4\n")
+        zf.writestr("without.csv", "h1,h2\n1,2\n3,4")
+        zf.writestr("empty.csv", "")
+    with zipfile.ZipFile(zpath) as zf:
+        counts = {n: dl.stream_csv(zf, zf.getinfo(n), str(tmp_path / (n + ".gz")))[1] for n in zf.namelist()}
+    assert counts == {"with.csv": 3, "without.csv": 3, "empty.csv": 0}

@@ -32,6 +32,14 @@ dashboard/           template.html (source), index.html / fragment.html / data.j
 Data never goes into git. Raw data is shared and read-only under `~/citibike/data`; each environment has its own lake
 `~/citibike/lake/<env>/{bronze,silver,gold,_meta}`.
 
+## Cloud environment
+
+Two virtual machines provided by the university and set up by hand through the OpenStack Horizon dashboard
+(the separate cloud assignment): `spark-vm` (8 vCPU, 16 GB: Spark master and a worker, driver, NFS server for
+`~/citibike`, GitHub Actions self-hosted runner) and `calc` (8 vCPU: second Spark worker, mounts `~/citibike` over NFS).
+Everything that runs on them is configured from this repository (`infra/spark/`, `config/`, `.github/workflows/`).
+Both environments, `dev` and `prod`, run on this cluster with separate lakes.
+
 ## Setup
 
 Ubuntu 24.04, Java 8, Spark 3.5.0 in `/opt/spark`, Python 3.11.
@@ -102,6 +110,17 @@ to `~/citibike/spark-events/` (open with the Spark history server); results in `
 $PY -m pytest -q        # ~3 min, Spark on small fixtures, timezone America/New_York
 node dashboard/check.js dashboard/index.html   # dashboard: prints the generated sentences, fails on bad chart coordinates
 ```
+
+## Known limitations
+
+- `localCheckpoint()` (station scan, duplicate detection) keeps blocks on the executors: if a worker is lost mid-job the
+  job fails instead of recomputing. A reliable `checkpoint()` to the shared disk would survive this at the cost of a write.
+- The service-station, valet and Jersey City patterns run as regular expressions on every trip row although they only
+  depend on the station; computing them on the station map would cut CPU in the Silver staging job (not yet measured).
+- Silver partitions by source-file month, Gold by `start_date` month; Gold is rebuilt in full, so totals match, but an
+  incremental Gold would need the neighbouring month.
+- Raw row counts are newline counts: a quoted field containing a newline would make the reconciliation fail (loudly).
+- `spark-vm` hosts the driver, NFS and the runner: a single point of failure.
 
 ## GitHub workflows (self-hosted runner on spark-vm)
 

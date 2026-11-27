@@ -17,6 +17,9 @@ Code: `src/citibike/silver_run.py`, `scripts/run_silver.py`. Output in `lake/pro
 4. Everything is written once to `silver/_staging/<run_id>`, checked, and only months that pass are published.
    Checks per month: Bronze rows = accepted + rejected + duplicates removed; every accepted trip has its start station key.
    A failed month is not published and stays out of the ledger; the staging area is kept for inspection.
+5. Publishing a month first removes it from the ledger and deletes its old `year=/month=` folders in all four tables,
+   then writes the new ones and adds it back. Dynamic partition overwrite alone only replaces partitions that receive
+   rows, so a re-run that leaves a month without rejected rows or duplicates would otherwise keep the old ones.
 
 ## Result (prod, 161 months)
 
