@@ -146,3 +146,17 @@ def test_a_new_station_elsewhere_does_not_invalidate_months_that_do_not_use_it(s
         .write.mode("overwrite").parquet(f"{lake}/silver/station_map")
     again = silver_run.run(spark, cfg)
     assert again["processed"] == ["2024-07"] and again["skipped"] == ["2024-06"]
+
+
+def test_rerun_without_rejects_or_duplicates_leaves_no_rows_of_the_earlier_run(spark, tmp_path):
+    import shutil
+    cfg = setup(spark, tmp_path, modern_v2={"2024-06": [
+        dict(rideid="R1"), dict(rideid="R1"), dict(rideid="R3", endedat="2024-06-10 08:00:30.000")]})  # 1 duplicate, 1 reject
+    silver_run.run(spark, cfg)
+    assert table(spark, cfg, "rejected").count() == 1 and table(spark, cfg, "duplicates").count() == 1
+    shutil.rmtree(bronze.bronze_path(str(tmp_path), "modern_v2"))               # the month now arrives clean
+    cfg = setup(spark, tmp_path, modern_v2={"2024-06": [dict(rideid="R1")]})
+    assert silver_run.run(spark, cfg, force=True)["processed"] == ["2024-06"]
+    assert table(spark, cfg, "trips").count() == 1
+    assert table(spark, cfg, "rejected").count() == 0                           # dynamic overwrite alone kept the old folder
+    assert table(spark, cfg, "duplicates").count() == 0

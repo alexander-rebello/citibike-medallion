@@ -7,7 +7,12 @@
 
 Publishing: build into gold/_staging/<run_id>/, check the totals against the accepted Silver rows, and only then swap
 the tables into gold/ and write gold/_READY. A failed check leaves the previously published tables and _READY untouched.
-Consumers (the dashboard) read Gold only when _READY exists.
+Consumers (the dashboard) read Gold only when _READY exists. _READY is removed before the swap and written again after
+it, so a crash in the middle leaves no marker rather than a valid-looking one.
+
+"Month" in Gold is the month of start_date, while Silver partitions by the month of the source file. The two differ
+for trips that cross midnight at the end of a month. Gold is therefore rebuilt in full on every run (80 s for the whole
+history), so the totals always match Silver.
 """
 import json
 import os
@@ -71,10 +76,15 @@ def station_year(trips: DataFrame, stations: DataFrame) -> DataFrame:
 
 
 def station_bands(station_year_df: DataFrame) -> DataFrame:
-    """Per year and band: trips, stations and share of the year's trips."""
-    out = (station_year_df.groupBy("year", "band")
-           .agg(F.sum("trips_started").alias("trips"), F.count(F.lit(1)).alias("stations")))
-    return out.withColumn("share_of_year_pct", F.round(100 * F.col("trips") / F.sum("trips").over(Window.partitionBy("year")), 2))
+    """Per year and band: trips, stations and share of the year's trips (Spark SQL over gold_station_year)."""
+    station_year_df.createOrReplaceTempView("gold_station_year")
+    return station_year_df.sparkSession.sql("""
+        SELECT year, band,
+               SUM(trips_started) AS trips,
+               COUNT(*)           AS stations,
+               ROUND(100 * SUM(trips_started) / SUM(SUM(trips_started)) OVER (PARTITION BY year), 2) AS share_of_year_pct
+        FROM gold_station_year
+        GROUP BY year, band""")
 
 
 def total_trips(gold: DataFrame) -> int:
@@ -107,6 +117,11 @@ def publish(spark, lake_root: str, run_id: str, tables: dict[str, DataFrame], ex
     if bad:
         raise GoldCheckFailed(f"trip totals differ from accepted Silver rows (gold, silver): {bad}; staging kept at {staging}")
 
+    # The tables are swapped one after another, so withdraw the marker first: a crash during the swap leaves a mix of
+    # old and new tables, and consumers must not read that as a valid publication. _READY returns only after the swap.
+    marker_path = os.path.join(gold, "_READY")
+    if os.path.exists(marker_path):
+        os.remove(marker_path)
     for name in tables:  # swap: the old table is renamed away first, then the staged one moved in
         final, old = os.path.join(gold, name), os.path.join(gold, f"_old_{run_id}_{name}")
         if os.path.exists(final):

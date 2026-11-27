@@ -52,8 +52,8 @@ Known quirk: station name `85` (a number only) is recorded for legacy id 2021 ne
 ## Cost
 
 Collecting the observations scans Bronze once and took 14 min 33 s on the cluster, longer than the Bronze load itself
-(`percentile_approx` over 667 M rows plus regex on every row). Candidate improvement: pre-aggregate by rounded position
-first, then take the median of the small result.
+(`percentile_approx` over 667 M rows plus regex on every row). Fixed: grouping into 10 m cells first and computing the grouped
+table once brought it to 2 min 14 s (docs/performance.md §2).
 
 
 ## Incremental update (for the monthly run)

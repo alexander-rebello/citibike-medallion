@@ -22,6 +22,7 @@ from pyspark.sql import DataFrame, SparkSession, Window, functions as F
 from pyspark.sql.utils import AnalysisException
 
 from citibike import bronze, silver
+from citibike.spark import compute_once
 
 OUTPUTS = ("trips", "rejected", "duplicates", "quality")
 DUP_COLS = ["trip_id", "kind", "schema", "year", "month", "source_file", "start_time", "bike_id", "duration_s"]
@@ -101,6 +102,12 @@ def prev_month(m: str) -> str:
 
 def _ym(m: str) -> int:
     return int(m[:4]) * 100 + int(m[5:])
+
+
+def clear_partitions(table_path: str, yms: list[int]) -> None:
+    """Delete the year=/month= folders of these months, so a re-run cannot leave rows of an earlier run behind."""
+    for ym in yms:
+        shutil.rmtree(os.path.join(table_path, f"year={ym // 100}", f"month={ym % 100}"), ignore_errors=True)
 
 
 def plan(bronze_ledger: dict, silver_ledger: dict, scope, rules_dig: str, st_dig, force: bool):
@@ -194,9 +201,9 @@ def build_batch(spark: SparkSession, lake: str, rules: dict, by_schema: dict[str
         if prior_ids is not None:   # ids that already exist in the previous, already published month
             dup_tid = dup_tid.unionByName(keys.select("_tid").where(F.col("_tid").isNotNull())
                                           .join(prior_ids.withColumnRenamed("trip_id", "_tid"), "_tid", "left_semi").distinct())
-        dup_tid = dup_tid.distinct().withColumn("_m1", F.lit(True)).localCheckpoint()    # small; compute once
+        dup_tid = dup_tid.distinct().withColumn("_m1", F.lit(True)).transform(compute_once)    # small; compute once
         dup_bs = (keys.where(F.col("_bs").isNotNull()).groupBy("_bs").count().where("count > 1")
-                  .select("_bs", F.lit(True).alias("_m2")).localCheckpoint())
+                  .select("_bs", F.lit(True).alias("_m2")).transform(compute_once))
 
         marked = (raw.withColumn("_tid", silver.trip_id_expr(schema)).withColumn("_bs", silver.bike_start_key(schema))
                   .join(F.broadcast(dup_tid), "_tid", "left").join(F.broadcast(dup_bs), "_bs", "left"))
@@ -210,7 +217,7 @@ def build_batch(spark: SparkSession, lake: str, rules: dict, by_schema: dict[str
         for p in parts[1:]:
             out = out.unionByName(p)
         return out
-    aff = union(aff_parts).localCheckpoint()     # a few hundred rows
+    aff = union(aff_parts).transform(compute_once)     # a few hundred rows
     keep, removed = resolve_duplicates(aff, prior_ids)
     return union(normal_parts).unionByName(keep), removed
 
@@ -309,6 +316,14 @@ def run(spark: SparkSession, cfg: dict, months=None, force: bool = False, run_id
         yms = [_ym(m) for m in ok_months]
         in_ok = (F.col("year") * 100 + F.col("month")).isin(yms)
         out = root(lake)
+        # Dynamic overwrite only replaces partitions that receive rows: a month that had rejected rows or duplicates
+        # in an earlier run and has none now would keep the old folder. Withdraw the months from the ledger first
+        # (a crash from here on means "not published", never "published but incomplete"), then clear their folders.
+        for m in ok_months:
+            s_ledger.pop(m, None)
+        write_ledger(lake, s_ledger)
+        for name in ("trips", "rejected", "duplicates", "quality"):
+            clear_partitions(os.path.join(out, name), yms)
         (staged.where(in_ok & (F.col("status") == "accepted")).drop("status", "reject_reasons", "reject_reason")
          .write.mode("overwrite").partitionBy("year", "month").parquet(os.path.join(out, "trips")))
         (staged.where(in_ok & (F.col("status") == "rejected")).drop("status")

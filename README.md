@@ -32,6 +32,14 @@ dashboard/           template.html (source), index.html / fragment.html / data.j
 Data never goes into git. Raw data is shared and read-only under `~/citibike/data`; each environment has its own lake
 `~/citibike/lake/<env>/{bronze,silver,gold,_meta}`.
 
+## Cloud environment
+
+Two virtual machines provided by the university and set up by hand through the OpenStack Horizon dashboard
+(the separate cloud assignment): `spark-vm` (8 vCPU, 16 GB: Spark master and a worker, driver, NFS server for
+`~/citibike`, GitHub Actions self-hosted runner) and `calc` (8 vCPU: second Spark worker, mounts `~/citibike` over NFS).
+Everything that runs on them is configured from this repository (`infra/spark/`, `config/`, `.github/workflows/`).
+Both environments, `dev` and `prod`, run on this cluster with separate lakes.
+
 ## Setup
 
 Ubuntu 24.04, Java 8, Spark 3.5.0 in `/opt/spark`, Python 3.11.
@@ -102,6 +110,19 @@ to `~/citibike/spark-events/` (open with the Spark history server); results in `
 $PY -m pytest -q        # ~3 min, Spark on small fixtures, timezone America/New_York
 node dashboard/check.js dashboard/index.html   # dashboard: prints the generated sentences, fails on bad chart coordinates
 ```
+
+## Design decisions and their limits
+
+- Small reused tables (station cells, duplicate keys) are computed once with a reliable checkpoint in the shared lake
+  (`compute_once` in `src/citibike/spark.py`), so losing a worker mid-job does not fail the job.
+- The service-station, valet and Jersey City rules run per row: moving them to a lookup of distinct stations was measured
+  and gave no gain (`docs/performance.md` §5).
+- Gold is rebuilt in full every run (80 s), so it never has to reconcile Silver's source-file months with its own
+  start-date months.
+- Raw row counts are newline counts, and Bronze refuses a month whose rows do not match: anything unexpected in a source
+  file (for example a line break inside a quoted field) stops the month instead of loading it silently.
+- One VM (`spark-vm`) hosts the driver, NFS and the runner. This is the scope of the course environment; with more
+  machines, storage would move to an object store and the runner off the Spark nodes.
 
 ## GitHub workflows (self-hosted runner on spark-vm)
 

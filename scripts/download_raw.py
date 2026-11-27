@@ -158,7 +158,7 @@ def year_month_from_path(path):
 
 def stream_csv(zf, info, out_path):
     """Copy one CSV member into a gzip file, hashing and counting as it streams."""
-    sha, lines, header = hashlib.sha256(), 0, b""
+    sha, lines, header, last = hashlib.sha256(), 0, b"", b"\n"
     tmp = out_path + ".tmp"
     with zf.open(info) as src, gzip.open(tmp, "wb", compresslevel=6) as dst:
         first = True
@@ -168,7 +168,10 @@ def stream_csv(zf, info, out_path):
                 first = False
             sha.update(chunk)
             lines += chunk.count(b"\n")
+            last = chunk[-1:]
             dst.write(chunk)
+    if last != b"\n":   # a last line without a final newline is still a line (an empty file stays 0)
+        lines += 1
     os.replace(tmp, out_path)
     return sha.hexdigest(), lines, header
 

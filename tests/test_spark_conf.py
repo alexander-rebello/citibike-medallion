@@ -64,3 +64,14 @@ def test_extra_settings_from_config_are_passed_as_strings(monkeypatch):
                                                       "spark.sql.optimizer.plannedWrite.enabled": "false"}))
     assert conf["spark.sql.maxConcurrentOutputFileWriters"] == "8"
     assert conf["spark.sql.optimizer.plannedWrite.enabled"] == "false"
+
+
+def test_compute_once_writes_a_reliable_checkpoint_to_the_checkpoint_dir(spark):
+    import glob
+    from citibike.spark import compute_once
+    df = spark.range(10).withColumnRenamed("id", "x")
+    out = compute_once(df.where("x % 2 = 0"))
+    assert sorted(r.x for r in out.collect()) == [0, 2, 4, 6, 8]
+    files = glob.glob(spark.sparkContext.getCheckpointDir().removeprefix("file:") + "/rdd-*")
+    assert files                                       # on disk, not only in executor memory
+    assert "LogicalRDD" in out._jdf.queryExecution().logical().toString()   # lineage cut: no recomputation from the source
