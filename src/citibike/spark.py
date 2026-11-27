@@ -5,10 +5,12 @@ resolution. Cluster mode (`spark://...`) needs an address the workers can reach,
 `[spark] driver_host`. CITIBIKE_SPARK_MASTER overrides the configured master, so the same
 environment can run on one node or on the cluster (scaling experiment).
 Every session writes an event log for the history server (performance evidence).
+Small intermediate tables that several actions reuse are computed once with compute_once(): a reliable checkpoint in
+the lake (shared over NFS, so it survives a lost executor) instead of a localCheckpoint on the executors.
 """
 import os
 
-from pyspark.sql import SparkSession
+from pyspark.sql import DataFrame, SparkSession
 
 DEFAULT_EVENT_LOG_DIR = "~/citibike/spark-events"
 
@@ -29,6 +31,7 @@ def spark_conf(cfg: dict) -> tuple[str, dict[str, str]]:
         # a timestamp that does not match its pattern becomes null (and a counted reject), never an exception
         "spark.sql.legacy.timeParserPolicy": "CORRECTED",
         "spark.ui.showConsoleProgress": "false",  # progress bars flood logs and CI output
+        "spark.cleaner.referenceTracking.cleanCheckpoints": "true",  # delete checkpoint files once they are unused
         "spark.eventLog.enabled": "true",
         "spark.eventLog.dir": f"file://{event_dir}",
     }
@@ -64,4 +67,20 @@ def get_spark(cfg: dict, app: str) -> SparkSession:
     builder = SparkSession.builder.appName(f"citibike-{cfg['env']}-{app}").master(master)
     for k, v in conf.items():
         builder = builder.config(k, v)
-    return builder.getOrCreate()
+    spark = builder.getOrCreate()
+    lake = cfg.get("paths", {}).get("lake_root")
+    if lake:   # on the shared lake, so both workers write to and read from the same place
+        spark.sparkContext.setCheckpointDir(os.path.join(os.path.expanduser(lake), "_meta", "checkpoints"))
+    return spark
+
+
+def compute_once(df: DataFrame) -> DataFrame:
+    """Compute a small, reused table once and cut its lineage.
+
+    With a checkpoint directory (always set by get_spark) this is a reliable checkpoint: the result is written to the
+    shared lake and survives the loss of an executor. localCheckpoint() would keep the blocks on the executors, so
+    losing the second node mid-job would fail the job. Without a directory (ad-hoc sessions) it falls back to that.
+    """
+    if df.sparkSession.sparkContext.getCheckpointDir():
+        return df.checkpoint()
+    return df.localCheckpoint()

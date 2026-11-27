@@ -14,6 +14,7 @@ import time
 from pyspark.sql import Column, DataFrame, Window, functions as F
 
 from citibike import silver
+from citibike.spark import compute_once
 
 # (id, name, lat, lng) column names of the start and end side in each Bronze schema
 SIDES = {
@@ -55,7 +56,7 @@ def monthly_observations(bronze: DataFrame, schema: str, rules: dict) -> DataFra
              .groupBy("raw_id", "raw_name", "lat", "lng", "year", "month").agg(F.count(F.lit(1)).alias("cnt"))
              # small, and used three times below (counts, latitude median, longitude median): compute the Bronze scan once.
              # Without this Spark scanned Bronze three times (event log: three stages with identical input and task count).
-             .localCheckpoint())
+             .transform(compute_once))
 
     small = (cells.withColumn("station_id", silver.station_id("raw_id"))
              .withColumn("station_name", F.coalesce(silver._blank_to_null(F.col("raw_name")), F.lit("")))   # "" = no name
@@ -122,7 +123,7 @@ def components(labels: DataFrame, edges: DataFrame, max_iter: int = 30) -> DataF
         nbr = (both.join(labels.select(F.col("node").alias("dst"), F.col("label").alias("nl")), "dst")
                .groupBy("src").agg(F.min("nl").alias("nl")))
         new = (labels.join(nbr, labels.node == nbr.src, "left")
-               .select("node", F.least("label", F.coalesce("nl", "label")).alias("label")).localCheckpoint())
+               .select("node", F.least("label", F.coalesce("nl", "label")).alias("label")).transform(compute_once))
         changed = new.alias("n").join(labels.alias("o"), "node").where(F.col("n.label") != F.col("o.label")).count()
         labels = new
         if changed == 0:

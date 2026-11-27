@@ -55,7 +55,9 @@ Event logs: `app-20261109163724-0021`, `-0022`, `-0023`, `-0024`.
 **What did not work as expected.** The hypothesis was that the sort also dominated the 137 s staging job. It does not: that job is
 CPU-bound (1,400 s CPU of 1,600 s task time) by parsing, rules and the station joins, and removing the sort left it unchanged. The win is
 in the publish job (a plain read + write, where the sort was a big share) and in 14 GB less temporary disk I/O on a VM with 29 GB free.
-Extrapolated to the full run (83 GB spill) this is worth more, but the full run was not repeated (n=0 at full scale; stated as such).
+The setting is in all environment configs since. It was measured on 2019 + 2024 (64.8 M rows, a fifth of the history) and not on a
+full-history rerun: the sort and its spill happen per task and every task holds one month, so the effect per month does not depend
+on how many months a run contains.
 
 ## 4. Gold: thousands of small files in `gold_demand_hourly`
 
@@ -73,21 +75,48 @@ Gold build on the exp lake (2019 + 2024, 64.8 M trips), then a typical read (`tr
 | Read query, Spark job time | 6.7 s, 7.2 s | 6.1 s, 5.5 s (-17 %) |
 
 Event logs: build `app-20261109165606-0025`, `-0027` (base), `-0029`, `-0031` (repartition); reads `-0026`, `-0028`, `-0030`, `-0032`.
-The extra shuffle costs less than writing and later listing hundreds of tiny files. At full scale (10,304 files) the effect on readers
-should be larger; it will show in the next prod Gold run.
+The extra shuffle costs less than writing and later listing hundreds of tiny files.
 
 **Confirmed at full scale** (prod-pipeline run 42721947270, 9 Nov 2026): `gold_demand_hourly` now has **161 files / 356 MB**
 (was 10,304 files / 598 MB), and the `gold.tables` step took 80.5 s (was 111 s). n=1 each.
 
-## 5. Jobs not analysed yet
+## 5. Station rules on distinct stations instead of every row (refuted)
+
+**Evidence.** §3 showed the Silver staging job is CPU-bound. The service-station, valet and Jersey City rules are regular
+expressions evaluated on every trip (start and end side), although they depend only on the station. Local benchmark of the Silver
+transform (`silver.standardise` + an aggregate over its output), 10 M synthetic modern rows with 2,000 station names, local[4],
+best of 3 runs each:
+
+| Variant | Time |
+|---|---|
+| regex on every row (current) | 25.1 s, 25.8 s |
+| station regex switched off (upper bound of any gain) | 18.6 s |
+| regex on the distinct (id, name) pairs of the batch, joined back with two broadcast joins | 26.5 s |
+
+The regexes cost about 28 % of the transform, but moving them to a lookup gave nothing: building the lookup needs another scan
+for the distinct pairs, and the two broadcast joins on (id, name) per row cost about as much as the regexes they replace. The
+station map cannot be reused for this, because service points are deliberately not in it. **Hypothesis refuted; the rules stay
+per row.**
+
+## 6. Reliable instead of local checkpoints
+
+`localCheckpoint()` (§2 and the duplicate detection) keeps its blocks on the executors: losing `calc` mid-job would fail the job,
+because the lineage is cut and the blocks cannot be recomputed. `compute_once()` (`src/citibike/spark.py`) now writes a reliable
+checkpoint to `lake/<env>/_meta/checkpoints/`, which both nodes share over NFS; Spark deletes the files when they are no longer
+referenced. The checkpointed tables are small (the grouped station cells, about 70 MB, the duplicate keys and a few hundred
+affected rows), so the extra write is small compared with the scans it saves.
+
+## 7. Final job times (prod, 161 months, cluster)
 
 | Job | Time |
 |---|---|
-| Bronze profile (`profile_bronze.py`): explodes about 20 structs per row | 7 min 40 s |
+| Bronze load | 4 min 57 s |
+| Bronze profile (`profile_bronze.py`) | 7 min 40 s |
+| Station observations | 2 min 14 s |
 | Silver rules report (`silver_rules_report.py`) | 10 min 22 s |
-| Silver run, full history (`run_silver.py`) | 20 min 30 s (see §3) |
-| Gold build and publish | 2 min 37 s |
+| Silver run, full history (`run_silver.py`) | 20 min 30 s |
+| Gold build and publish | 80.5 s |
+| Monthly run without new data (whole pipeline) | about 3 min |
 
-Remaining candidates: repeated scans in the Silver run (the standardised frame is used for the main path and the duplicate rows),
-`shuffle_partitions`, AQE on/off, broadcast vs sort-merge for the station join (the map is
-4,205 rows and is already broadcast).
+The monthly run only processes the new month in Bronze and Silver; Gold is rebuilt in full on purpose (80 s), so that it never
+has to reconcile trips that cross a month boundary between Silver's source-file months and Gold's start-date months.

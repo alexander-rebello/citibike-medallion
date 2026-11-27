@@ -17,5 +17,7 @@ def spark():
          .config("spark.sql.legacy.timeParserPolicy", "CORRECTED")
          .getOrCreate())
     s.sparkContext.setLogLevel("ERROR")
+    import tempfile
+    s.sparkContext.setCheckpointDir(tempfile.mkdtemp(prefix="citibike-ckpt-"))   # as get_spark does on the lake
     yield s
     s.stop()

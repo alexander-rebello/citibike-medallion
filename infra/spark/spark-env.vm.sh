@@ -1,4 +1,4 @@
-# Citi Bike standalone cluster (spark-vm = master + worker). Addresses are pinned: hostnames broke after Tailscale.
+# Citi Bike standalone cluster (spark-vm = master + worker). Addresses are pinned, so nothing depends on hostname resolution.
 export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 export SPARK_MASTER_HOST=192.168.26.92
 export SPARK_MASTER_PORT=7077

@@ -5,7 +5,7 @@ Principle: one idea per slide. Story: raw files -> trustworthy data -> an answer
 | # | Min | Slide | Message / evidence |
 |---|---:|---|---|
 | 1 | 0:45 | The question | Pandemic and e-bikes: did usage change? Teaser chart: e-bike share 14 % -> 66 % -> 73 %. |
-| 2 | 1:15 | The data is not one dataset | 334 M rows, 2 schemas, 4 headers, 8 timestamp formats; timeline figure. Our wrong assumption and what it taught us. |
+| 2 | 1:15 | The data is not one dataset | 334 M rows, 2 schemas, 4 headers, 5 timestamp formats in 9 runs of months; timeline figure. Our wrong assumption and what it taught us. |
 | 3 | 1:00 | Architecture | Medallion diagram, dev/prod, 2-node cluster, git -> CI lane. |
 | 4 | 0:45 | Bronze | Store unchanged, reconcile every month, an unknown header stops the run. |
 | 5 | 3:00 | **Silver** | (a) rules come from measurements, (b) row accounting: 99.91 % accepted, every reject has a reason, (c) the daylight-saving repair story. |

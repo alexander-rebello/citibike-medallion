@@ -111,16 +111,18 @@ $PY -m pytest -q        # ~3 min, Spark on small fixtures, timezone America/New_
 node dashboard/check.js dashboard/index.html   # dashboard: prints the generated sentences, fails on bad chart coordinates
 ```
 
-## Known limitations
+## Design decisions and their limits
 
-- `localCheckpoint()` (station scan, duplicate detection) keeps blocks on the executors: if a worker is lost mid-job the
-  job fails instead of recomputing. A reliable `checkpoint()` to the shared disk would survive this at the cost of a write.
-- The service-station, valet and Jersey City patterns run as regular expressions on every trip row although they only
-  depend on the station; computing them on the station map would cut CPU in the Silver staging job (not yet measured).
-- Silver partitions by source-file month, Gold by `start_date` month; Gold is rebuilt in full, so totals match, but an
-  incremental Gold would need the neighbouring month.
-- Raw row counts are newline counts: a quoted field containing a newline would make the reconciliation fail (loudly).
-- `spark-vm` hosts the driver, NFS and the runner: a single point of failure.
+- Small reused tables (station cells, duplicate keys) are computed once with a reliable checkpoint in the shared lake
+  (`compute_once` in `src/citibike/spark.py`), so losing a worker mid-job does not fail the job.
+- The service-station, valet and Jersey City rules run per row: moving them to a lookup of distinct stations was measured
+  and gave no gain (`docs/performance.md` §5).
+- Gold is rebuilt in full every run (80 s), so it never has to reconcile Silver's source-file months with its own
+  start-date months.
+- Raw row counts are newline counts, and Bronze refuses a month whose rows do not match: anything unexpected in a source
+  file (for example a line break inside a quoted field) stops the month instead of loading it silently.
+- One VM (`spark-vm`) hosts the driver, NFS and the runner. This is the scope of the course environment; with more
+  machines, storage would move to an object store and the runner off the Spark nodes.
 
 ## GitHub workflows (self-hosted runner on spark-vm)
 

@@ -6,7 +6,7 @@
 | calc `192.168.26.96` | worker only | `spark-env.calc.sh` | 8 cores, 12 GB |
 
 Both nodes mount `~/citibike` (NFS from spark-vm) at the same path, so executors see the same files.
-Addresses are pinned to the private IPs because hostname resolution broke after Tailscale.
+Addresses are pinned to the private IPs, so nothing depends on hostname resolution.
 
 Run on spark-vm:
 

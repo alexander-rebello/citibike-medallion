@@ -11,8 +11,8 @@ Consumers (the dashboard) read Gold only when _READY exists. _READY is removed b
 it, so a crash in the middle leaves no marker rather than a valid-looking one.
 
 "Month" in Gold is the month of start_date, while Silver partitions by the month of the source file. The two differ
-for trips that cross midnight at the end of a month. Totals still match because Gold is rebuilt in full on every run;
-an incremental Gold would have to read the neighbouring Silver month as well.
+for trips that cross midnight at the end of a month. Gold is therefore rebuilt in full on every run (80 s for the whole
+history), so the totals always match Silver.
 """
 import json
 import os
